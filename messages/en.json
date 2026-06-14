@@ -1,0 +1,71 @@
+{
+  "common": {
+    "appName": "SETLOG",
+    "cancel": "Cancel",
+    "add": "Add",
+    "update": "Update"
+  },
+  "editor": {
+    "newSetlist": "New Setlist",
+    "newSetlistConfirm": "Clear current setlist and create a new one?",
+    "newSetlistSuccess": "New setlist created",
+    "publishUrl": "Share URL",
+    "bandNamePlaceholder": "Band / Artist Name",
+    "titlePlaceholder": "Title (e.g. 2024/12/14 Shibuya CLUB QUATTRO)",
+    "venueName": "Venue",
+    "eventDate": "Date",
+    "venueUrl": "Venue URL (optional)",
+    "targetTime": "Target time (min)",
+    "totalTime": "Total Time",
+    "remaining": "Remaining {time}",
+    "over": "{time} over",
+    "songs": "{count} songs",
+    "addSong": "Add Song",
+    "addMC": "Add MC",
+    "addSE": "Add SE",
+    "emptyList": "Add songs, MC, or SE using the buttons below",
+    "updatedSuccess": "Updated",
+    "addedSuccess": "Added"
+  },
+  "addItem": {
+    "addSong": "Add Song",
+    "addMC": "Add MC",
+    "addSE": "Add SE",
+    "editSong": "Edit Song",
+    "editMC": "Edit MC",
+    "editSE": "Edit SE",
+    "searchDeezer": "Search on Deezer",
+    "searchPlaceholder": "Enter song or artist name...",
+    "noResultManual": "Not on Deezer? Enter manually",
+    "editDetails": "Edit Details",
+    "songTitle": "Song Title *",
+    "titleLabel": "Title *",
+    "artistName": "Artist Name",
+    "bandName": "Band Name",
+    "time": "Time (MM:SS) *",
+    "memo": "Note (key, BPM, etc.)",
+    "memoPlaceholder": "Key: A, BPM: 120, etc.",
+    "titleRequired": "Please enter a title",
+    "timeRequired": "Please enter a time (e.g. 3:45)"
+  },
+  "share": {
+    "title": "Share URL",
+    "description": "Share this URL on social media for your fans.",
+    "twitterShare": "Share on X (Twitter)",
+    "instagramDownload": "Download for Instagram",
+    "twitterStreamingLine": "Listen on your favorite streaming service 🎵",
+    "downloadSuccess": "Image downloaded",
+    "copySuccess": "URL copied"
+  },
+  "public": {
+    "notFound": "Setlist not found",
+    "notFoundDesc": "Please check if the URL is correct.",
+    "createSetlist": "Create a setlist",
+    "total": "Total",
+    "previewHint": "Tap ▶ for 30s preview",
+    "stop": "Stop",
+    "editBase": "Use this setlist as a base",
+    "adSpace": "Ad space",
+    "loading": "Loading..."
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "common": {
+    "appName": "SETLOG",
+    "cancel": "キャンセル",
+    "add": "追加",
+    "update": "更新"
+  },
+  "editor": {
+    "newSetlist": "新規作成",
+    "newSetlistConfirm": "現在のセトリをクリアして新規作成しますか？",
+    "newSetlistSuccess": "新しいセトリを作成しました",
+    "publishUrl": "公開URLを生成",
+    "bandNamePlaceholder": "バンド名 / アーティスト名",
+    "titlePlaceholder": "タイトル (例: 2024/12/14 渋谷CLUB QUATTRO)",
+    "venueName": "会場名",
+    "eventDate": "開催日",
+    "venueUrl": "会場URL（任意）",
+    "targetTime": "持ち時間（分）",
+    "totalTime": "合計時間",
+    "remaining": "残り {time}",
+    "over": "{time} オーバー",
+    "songs": "{count}曲",
+    "addSong": "曲を追加",
+    "addMC": "MCを追加",
+    "addSE": "SEを追加",
+    "emptyList": "下のボタンから曲やMCを追加してください",
+    "updatedSuccess": "更新しました",
+    "addedSuccess": "追加しました"
+  },
+  "addItem": {
+    "addSong": "曲を追加",
+    "addMC": "MCを追加",
+    "addSE": "SEを追加",
+    "editSong": "曲を編集",
+    "editMC": "MCを編集",
+    "editSE": "SEを編集",
+    "searchDeezer": "Deezerで検索",
+    "searchPlaceholder": "曲名やアーティスト名を入力...",
+    "noResultManual": "Deezerにない場合は手動入力",
+    "editDetails": "詳細を編集",
+    "songTitle": "曲名 *",
+    "titleLabel": "タイトル *",
+    "artistName": "アーティスト名",
+    "bandName": "バンド名",
+    "time": "時間 (MM:SS) *",
+    "memo": "メモ（キーなど）",
+    "memoPlaceholder": "Key: A, BPM: 120 など",
+    "titleRequired": "タイトルを入力してください",
+    "timeRequired": "時間を入力してください (例: 3:45)"
+  },
+  "share": {
+    "title": "公開URLを共有",
+    "description": "このURLをSNSにシェアしてファンに届けましょう。",
+    "twitterShare": "X(Twitter)でシェア",
+    "instagramDownload": "Instagram用画像をDL",
+    "twitterStreamingLine": "お好きなサブスクで聴き直せます🎵",
+    "downloadSuccess": "画像をダウンロードしました",
+    "copySuccess": "URLをコピーしました"
+  },
+  "public": {
+    "notFound": "セトリが見つかりません",
+    "notFoundDesc": "URLが正しいか確認してください。",
+    "createSetlist": "セトリを作る",
+    "total": "合計",
+    "previewHint": "▶ をタップで30秒プレビュー再生",
+    "stop": "停止",
+    "editBase": "このセトリをベースに自分で編集",
+    "adSpace": "広告スペース",
+    "loading": "読み込み中..."
+  }
+}
