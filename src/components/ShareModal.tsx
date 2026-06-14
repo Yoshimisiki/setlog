@@ -143,30 +143,25 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
       ctx.fillText(`+ ${setlist.items.length - 18} more`, 90, 300 + 18 * 40)
     }
 
-    // QR code (bottom-right corner)
+    // Pre-generate QR data URL before drawing footer
+    let qrImg: HTMLImageElement | null = null
     try {
       const qrDataUrl = await QRCode.toDataURL(displayUrl, {
-        width: 300,
-        margin: 2,
+        width: 200,
+        margin: 1,
         color: { dark: '#000000', light: '#ffffff' },
       })
-      const qrImg = new Image()
+      qrImg = new Image()
       await new Promise<void>((resolve) => {
-        qrImg.onload = () => resolve()
-        qrImg.src = qrDataUrl
+        qrImg!.onload = () => resolve()
+        qrImg!.src = qrDataUrl
       })
-      const qrSize = 150
-      const qrPad = 40
-      const qrX = W - qrPad - qrSize
-      const qrY = H - qrPad - qrSize
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16)
-      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
     } catch {}
 
-    // Footer
+    // Footer (drawn before QR so QR appears on top)
+    const footerY = H - 100
     ctx.fillStyle = '#1a1a1a'
-    ctx.fillRect(0, H - 100, W, 100)
+    ctx.fillRect(0, footerY, W, 100)
     ctx.fillStyle = '#ffffff'
     ctx.font = 'bold 22px sans-serif'
     ctx.textAlign = 'left'
@@ -181,6 +176,16 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
     ctx.fillText(footerUrl, 50, H - 35)
     ctx.fillStyle = '#444'
     ctx.fillText('© 2026– SETLOG by Yowofuru LLC / Yoshimisiki', 50, H - 15)
+
+    // QR code — drawn last so it sits on top of footer
+    if (qrImg) {
+      const qrSize = 76
+      const qrX = W - 20 - qrSize
+      const qrY = footerY + (100 - qrSize) / 2
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8)
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+    }
 
     const link = document.createElement('a')
     link.download = `setlog-${Date.now()}.png`
