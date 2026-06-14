@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -183,6 +183,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
           <DialogTitle className="text-foreground">
             {labelMap[itemType]}
           </DialogTitle>
+          <DialogDescription className="sr-only">{labelMap[itemType]}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
