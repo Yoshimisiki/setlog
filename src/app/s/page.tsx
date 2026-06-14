@@ -183,8 +183,8 @@ export default function PublicPage() {
                         className="text-[#1DB954] hover:opacity-70 transition-opacity flex-shrink-0">
                         <SiSpotify className="w-5 h-5" />
                       </a>
-                      <a href={links.appleMusic} target="_blank" rel="noopener noreferrer"
-                        title="Apple Music で検索"
+                      <a href={item.apple_music_url ?? links.appleMusic} target="_blank" rel="noopener noreferrer"
+                        title={item.apple_music_url ? 'Apple Music で開く' : 'Apple Music で検索'}
                         className="text-pink-400 hover:opacity-70 transition-opacity flex-shrink-0">
                         <SiApplemusic className="w-5 h-5" />
                       </a>

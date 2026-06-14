@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { parseMMSS, formatSeconds } from '@/lib/utils'
 import { searchTracks } from '@/lib/deezer'
 import { searchMusicBrainz } from '@/lib/musicbrainz'
+import { searchITunes } from '@/lib/itunes'
 import { Loader2, Music, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
@@ -18,13 +19,14 @@ import { useTranslations } from 'next-intl'
 import type { SetlistItem, ItemType } from '@/types'
 
 interface TrackResult {
-  source: 'deezer' | 'musicbrainz'
+  source: 'deezer' | 'musicbrainz' | 'itunes'
   id: string
   title: string
   artist: string
   duration_seconds: number
   cover_url?: string
   preview_url?: string
+  apple_music_url?: string
 }
 
 interface Props {
@@ -50,8 +52,9 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [artist, setArtist]         = useState('')
   const [duration, setDuration]     = useState('')
   const [note, setNote]             = useState('')
-  const [deezerId, setDeezerId]     = useState('')
-  const [previewUrl, setPreviewUrl] = useState('')
+  const [deezerId, setDeezerId]         = useState('')
+  const [previewUrl, setPreviewUrl]     = useState('')
+  const [appleMusicUrl, setAppleMusicUrl] = useState('')
   const [manualOpen, setManualOpen] = useState(false)
 
   const [searchInput, setSearchInput]     = useState('')
@@ -79,6 +82,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setNote(editItem.note ?? '')
       setDeezerId(editItem.deezer_id ?? '')
       setPreviewUrl(editItem.preview_url ?? '')
+      setAppleMusicUrl(editItem.apple_music_url ?? '')
       setManualOpen(true)
       if (editItem.deezer_id) {
         setSelectedTrack({
@@ -99,6 +103,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setNote('')
       setDeezerId('')
       setPreviewUrl('')
+      setAppleMusicUrl('')
       setSelectedTrack(null)
       setManualOpen(itemType === 'mc')
     }
@@ -158,7 +163,24 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
           return
         }
 
-        // Step 3: no results → open manual form
+        // Step 3: iTunes fallback
+        const itunesTracks = await searchITunes(value)
+        if (itunesTracks.length > 0) {
+          setDropdown(itunesTracks.map((t) => ({
+            source: 'itunes' as const,
+            id: String(t.trackId),
+            title: t.trackName,
+            artist: t.artistName,
+            duration_seconds: t.trackTimeMillis ? Math.floor(t.trackTimeMillis / 1000) : 0,
+            cover_url: t.artworkUrl60,
+            preview_url: t.previewUrl,
+            apple_music_url: t.trackViewUrl,
+          })))
+          setDropdownOpen(true)
+          return
+        }
+
+        // Step 4: no results → open manual form
         setDropdown([])
         setDropdownOpen(false)
         setManualOpen(true)
@@ -180,9 +202,15 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     if (result.source === 'deezer') {
       setDeezerId(result.id)
       setPreviewUrl(result.preview_url ?? '')
+      setAppleMusicUrl('')
+    } else if (result.source === 'itunes') {
+      setDeezerId('')
+      setPreviewUrl(result.preview_url ?? '')
+      setAppleMusicUrl(result.apple_music_url ?? '')
     } else {
       setDeezerId('')
       setPreviewUrl('')
+      setAppleMusicUrl('')
     }
 
     setSearchInput('')
@@ -194,6 +222,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setSelectedTrack(null)
     setDeezerId('')
     setPreviewUrl('')
+    setAppleMusicUrl('')
   }
 
   const handleSave = () => {
@@ -218,6 +247,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       note: note.trim() || undefined,
       deezer_id: deezerId || undefined,
       preview_url: previewUrl || undefined,
+      apple_music_url: appleMusicUrl || undefined,
     })
     onClose()
   }
@@ -365,7 +395,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">
                     {t('time')}
-                    {selectedTrack?.source === 'musicbrainz' && (
+                    {(selectedTrack?.source === 'musicbrainz' || selectedTrack?.source === 'itunes') && (
                       <span className="ml-1.5 text-yellow-500/80 font-normal">（不正確な場合があります）</span>
                     )}
                   </Label>
@@ -404,14 +434,24 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   )
 }
 
-function SourceBadge({ source }: { source: 'deezer' | 'musicbrainz' }) {
-  return source === 'deezer' ? (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#9f10bc]/20 text-[#c44de8] flex-shrink-0">
-      Deezer
-    </span>
-  ) : (
-    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 flex-shrink-0">
-      MusicBrainz
+function SourceBadge({ source }: { source: 'deezer' | 'musicbrainz' | 'itunes' }) {
+  if (source === 'deezer') {
+    return (
+      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#9f10bc]/20 text-[#c44de8] flex-shrink-0">
+        Deezer
+      </span>
+    )
+  }
+  if (source === 'musicbrainz') {
+    return (
+      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 flex-shrink-0">
+        MusicBrainz
+      </span>
+    )
+  }
+  return (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 flex-shrink-0">
+      iTunes
     </span>
   )
 }

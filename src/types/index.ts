@@ -8,6 +8,7 @@ export interface SetlistItem {
   duration_seconds: number
   deezer_id?: string
   preview_url?: string
+  apple_music_url?: string
   note?: string
 }
 
