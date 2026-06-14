@@ -9,12 +9,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { parseMMSS, formatSeconds } from '@/lib/utils'
 import { searchTracks } from '@/lib/deezer'
+import { searchMusicBrainz } from '@/lib/musicbrainz'
 import { Loader2, Music, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { useTranslations } from 'next-intl'
 
-import type { SetlistItem, ItemType, DeezerTrack } from '@/types'
+import type { SetlistItem, ItemType } from '@/types'
+
+interface TrackResult {
+  source: 'deezer' | 'musicbrainz'
+  id: string
+  title: string
+  artist: string
+  duration_seconds: number
+  cover_url?: string
+  preview_url?: string
+}
 
 interface Props {
   open: boolean
@@ -44,10 +55,10 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [manualOpen, setManualOpen] = useState(false)
 
   const [searchInput, setSearchInput]     = useState('')
-  const [dropdown, setDropdown]           = useState<DeezerTrack[]>([])
+  const [dropdown, setDropdown]           = useState<TrackResult[]>([])
   const [dropdownOpen, setDropdownOpen]   = useState(false)
   const [searching, setSearching]         = useState(false)
-  const [selectedTrack, setSelectedTrack] = useState<DeezerTrack | null>(null)
+  const [selectedTrack, setSelectedTrack] = useState<TrackResult | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRef   = useRef<HTMLDivElement>(null)
@@ -71,12 +82,12 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setManualOpen(true)
       if (editItem.deezer_id) {
         setSelectedTrack({
-          id: Number(editItem.deezer_id),
+          source: 'deezer',
+          id: editItem.deezer_id,
           title: editItem.title,
-          artist: { name: editItem.artist ?? '' },
-          album: { cover_small: '', cover_medium: '' },
-          duration: editItem.duration_seconds,
-          preview: editItem.preview_url ?? '',
+          artist: editItem.artist ?? '',
+          duration_seconds: editItem.duration_seconds,
+          preview_url: editItem.preview_url,
         })
       } else {
         setSelectedTrack(null)
@@ -117,25 +128,63 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setSearching(true)
     debounceRef.current = setTimeout(async () => {
       try {
-        const tracks = await searchTracks(value)
-        setDropdown(tracks)
-        setDropdownOpen(tracks.length > 0)
+        // Step 1: Deezer
+        const deezerTracks = await searchTracks(value)
+        if (deezerTracks.length > 0) {
+          setDropdown(deezerTracks.map((t) => ({
+            source: 'deezer' as const,
+            id: String(t.id),
+            title: t.title,
+            artist: t.artist.name,
+            duration_seconds: t.duration,
+            cover_url: t.album.cover_small,
+            preview_url: t.preview,
+          })))
+          setDropdownOpen(true)
+          return
+        }
+
+        // Step 2: MusicBrainz fallback
+        const mbTracks = await searchMusicBrainz(value)
+        if (mbTracks.length > 0) {
+          setDropdown(mbTracks.map((t) => ({
+            source: 'musicbrainz' as const,
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            duration_seconds: t.duration_seconds,
+          })))
+          setDropdownOpen(true)
+          return
+        }
+
+        // Step 3: no results → open manual form
+        setDropdown([])
+        setDropdownOpen(false)
+        setManualOpen(true)
       } catch {
-        toast.error('Deezer検索に失敗しました')
+        toast.error('検索に失敗しました')
       } finally {
         setSearching(false)
       }
     }, 300)
   }, [])
 
-  const handleSelectTrack = (track: DeezerTrack) => {
-    setSelectedTrack(track)
-    setTitle(track.title)
-    setArtist(track.artist.name)
-    setDuration(formatSeconds(track.duration))
-    setDeezerId(String(track.id))
-    setPreviewUrl(track.preview)
+  const handleSelectTrack = (result: TrackResult) => {
+    setSelectedTrack(result)
+    setTitle(result.title)
+    setArtist(result.artist)
+    setDuration(result.duration_seconds > 0 ? formatSeconds(result.duration_seconds) : '')
     setManualOpen(true)
+
+    if (result.source === 'deezer') {
+      setDeezerId(result.id)
+      setPreviewUrl(result.preview_url ?? '')
+    } else {
+      setDeezerId('')
+      setPreviewUrl('')
+    }
+
     setSearchInput('')
     setDropdown([])
     setDropdownOpen(false)
@@ -188,19 +237,26 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
         <div className="space-y-4">
 
-          {/* Deezer search (primary) */}
+          {/* Search (Deezer → MusicBrainz → manual) */}
           {showSearch && (
             <div ref={searchRef} className="relative">
               <p className="text-xs font-medium text-primary mb-1.5">{t('searchDeezer')}</p>
 
               {selectedTrack ? (
                 <div className="flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl px-3 py-3">
-                  {selectedTrack.album.cover_small && (
-                    <img src={selectedTrack.album.cover_small} alt="" className="w-10 h-10 rounded-lg flex-shrink-0" />
+                  {selectedTrack.cover_url ? (
+                    <img src={selectedTrack.cover_url} alt="" className="w-10 h-10 rounded-lg flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                      <Music className="w-4 h-4 text-muted-foreground" />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate text-foreground">{selectedTrack.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{selectedTrack.artist.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate">{selectedTrack.artist}</p>
+                      <SourceBadge source={selectedTrack.source} />
+                    </div>
                   </div>
                   <button
                     onClick={clearSelectedTrack}
@@ -230,29 +286,34 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
                   {dropdownOpen && dropdown.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-xl divide-y divide-border max-h-64 overflow-y-auto">
-                      {dropdown.map((track) => (
+                      {dropdown.map((result) => (
                         <button
-                          key={track.id}
+                          key={`${result.source}-${result.id}`}
                           className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/60 transition-colors text-left"
                           onMouseDown={(e) => {
                             e.preventDefault()
-                            handleSelectTrack(track)
+                            handleSelectTrack(result)
                           }}
                         >
-                          {track.album.cover_small ? (
-                            <img src={track.album.cover_small} alt="" className="w-9 h-9 rounded flex-shrink-0" />
+                          {result.cover_url ? (
+                            <img src={result.cover_url} alt="" className="w-9 h-9 rounded flex-shrink-0" />
                           ) : (
                             <div className="w-9 h-9 rounded bg-secondary flex items-center justify-center flex-shrink-0">
                               <Music className="w-3 h-3 text-muted-foreground" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate text-foreground">{track.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{track.artist.name}</p>
+                            <p className="text-sm font-medium truncate text-foreground">{result.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">{result.artist}</p>
                           </div>
-                          <span className="text-xs text-muted-foreground font-mono flex-shrink-0">
-                            {formatSeconds(track.duration)}
-                          </span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {result.duration_seconds > 0 && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {formatSeconds(result.duration_seconds)}
+                              </span>
+                            )}
+                            <SourceBadge source={result.source} />
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -302,7 +363,12 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                 )}
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{t('time')}</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t('time')}
+                    {selectedTrack?.source === 'musicbrainz' && (
+                      <span className="ml-1.5 text-yellow-500/80 font-normal">（不正確な場合があります）</span>
+                    )}
+                  </Label>
                   <Input
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
@@ -335,5 +401,17 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function SourceBadge({ source }: { source: 'deezer' | 'musicbrainz' }) {
+  return source === 'deezer' ? (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#9f10bc]/20 text-[#c44de8] flex-shrink-0">
+      Deezer
+    </span>
+  ) : (
+    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 flex-shrink-0">
+      MusicBrainz
+    </span>
   )
 }
