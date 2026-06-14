@@ -6,11 +6,28 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')
   if (!q?.trim()) return NextResponse.json({ results: [] })
 
-  const res = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&limit=10&country=JP`,
-    { next: { revalidate: 60 } }
-  )
-  if (!res.ok) return NextResponse.json({ results: [] }, { status: 502 })
-  const data = await res.json()
-  return NextResponse.json(data)
+  const base = `https://itunes.apple.com/search?entity=musicTrack&country=JP&limit=10`
+  const term = encodeURIComponent(q)
+
+  const [byArtist, bySong] = await Promise.all([
+    fetch(`${base}&attribute=artistTerm&term=${term}`, { next: { revalidate: 60 } }),
+    fetch(`${base}&attribute=songTerm&term=${term}`,   { next: { revalidate: 60 } }),
+  ])
+
+  const [artistData, songData] = await Promise.all([
+    byArtist.ok ? byArtist.json() : { results: [] },
+    bySong.ok   ? bySong.json()   : { results: [] },
+  ])
+
+  const seen = new Set<number>()
+  const merged: unknown[] = []
+  for (const track of [...(artistData.results ?? []), ...(songData.results ?? [])]) {
+    const id = (track as { trackId: number }).trackId
+    if (!seen.has(id)) {
+      seen.add(id)
+      merged.push(track)
+    }
+  }
+
+  return NextResponse.json({ results: merged })
 }
