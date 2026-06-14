@@ -18,6 +18,7 @@ import { saveCurrentSetlist, loadCurrentSetlist, defaultSetlist } from '@/lib/st
 import { toast } from 'sonner'
 import { Plus, Mic2, Radio, Link2, ListMusic, FilePlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import type { Setlist, SetlistItem, ItemType } from '@/types'
 import SortableItem from './SortableItem'
 import AddItemModal from './AddItemModal'
@@ -126,10 +127,10 @@ export default function SetlistEditor({ initialSetlist }: Props) {
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <ListMusic className="w-5 h-5 text-primary" />
           <span className="font-bold text-primary text-lg">{t('common.appName')}</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost" size="sm"

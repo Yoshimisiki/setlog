@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Music2, Clock, Share2, Smartphone } from 'lucide-react'
+import { ListMusic, Clock, Share2, Headphones } from 'lucide-react'
+import AppFooter from '@/components/AppFooter'
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border px-4 h-14 flex items-center justify-between max-w-4xl mx-auto w-full">
         <div className="flex items-center gap-2">
-          <Music2 className="w-5 h-5 text-primary" />
-          <span className="font-bold text-lg tracking-tight text-primary">SETLIST</span>
+          <ListMusic className="w-5 h-5 text-primary" />
+          <span className="font-bold text-lg tracking-tight text-primary">SETLOG</span>
         </div>
         <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Link href="/editor">セトリを作る</Link>
@@ -18,7 +19,7 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-20 text-center">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1 text-sm font-medium border border-primary/20">
-            <Music2 className="w-4 h-4" />
+            <ListMusic className="w-4 h-4" />
             登録不要・完全無料
           </div>
 
@@ -29,7 +30,7 @@ export default function LandingPage() {
 
           <p className="text-muted-foreground text-lg max-w-lg mx-auto">
             持ち時間に合わせてセトリを組んで、URLをファンにシェア。
-            ファンはその場でSpotifyで聴き直せます。
+            ファンは各サブスクサービスで聴き直せます。
             <br />
             <span className="text-sm">アカウント不要・データはあなたのブラウザに保存。</span>
           </p>
@@ -56,9 +57,9 @@ export default function LandingPage() {
               desc: 'DBなし。セトリのデータはURLに入っているので、コピーして送るだけ。',
             },
             {
-              icon: Smartphone,
-              title: 'Spotifyで聴き直し',
-              desc: 'ファンはURLを開くだけで30秒プレビュー再生・プレイリスト保存が可能。',
+              icon: Headphones,
+              title: 'サブスクで聴き直し',
+              desc: 'Spotify・Apple Music・YouTube Music・Deezerの検索リンクを自動生成。Deezerなら30秒プレビューも再生可能。',
             },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="bg-card border border-border rounded-xl p-6 space-y-3">
@@ -72,9 +73,7 @@ export default function LandingPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border py-6 px-4 text-center text-sm text-muted-foreground">
-        © 2024 SETLIST. All rights reserved.
-      </footer>
+      <AppFooter />
     </div>
   )
 }
