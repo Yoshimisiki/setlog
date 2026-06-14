@@ -39,11 +39,14 @@ export default async function RootLayout({
     <html lang={locale} className="dark">
       <head>
         {adsenseId && (
-          <script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
-            crossOrigin="anonymous"
-          />
+          <>
+            <meta name="google-adsense-account" content={adsenseId} />
+            <script
+              async
+              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
+              crossOrigin="anonymous"
+            />
+          </>
         )}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}>
