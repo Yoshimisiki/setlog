@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { parseMMSS, formatSeconds } from '@/lib/utils'
 import { searchTracks } from '@/lib/deezer'
 import { searchMusicBrainz } from '@/lib/musicbrainz'
-import { searchITunes } from '@/lib/itunes'
+import { searchITunes, lookupITunesByArtistId, extractArtistId, type ITunesTrack } from '@/lib/itunes'
 import { Loader2, Music, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
@@ -45,23 +45,40 @@ const defaults: Record<ItemType, { title: string; duration: string }> = {
 
 const hasSearch = (type: ItemType) => type === 'song' || type === 'se'
 
+function itunesTrackToResult(t: ITunesTrack): TrackResult {
+  return {
+    source: 'itunes',
+    id: String(t.trackId),
+    title: t.trackName,
+    artist: t.artistName,
+    duration_seconds: t.trackTimeMillis ? Math.floor(t.trackTimeMillis / 1000) : 0,
+    cover_url: t.artworkUrl60,
+    preview_url: t.previewUrl,
+    apple_music_url: t.trackViewUrl,
+  }
+}
+
 export default function AddItemModal({ open, onClose, itemType, editItem, onSave }: Props) {
   const t = useTranslations('addItem')
   const tc = useTranslations('common')
-  const [title, setTitle]           = useState('')
-  const [artist, setArtist]         = useState('')
-  const [duration, setDuration]     = useState('')
-  const [note, setNote]             = useState('')
+  const [title, setTitle]               = useState('')
+  const [artist, setArtist]             = useState('')
+  const [duration, setDuration]         = useState('')
+  const [note, setNote]                 = useState('')
   const [deezerId, setDeezerId]         = useState('')
   const [previewUrl, setPreviewUrl]     = useState('')
   const [appleMusicUrl, setAppleMusicUrl] = useState('')
-  const [manualOpen, setManualOpen] = useState(false)
+  const [manualOpen, setManualOpen]     = useState(false)
 
-  const [searchInput, setSearchInput]     = useState('')
-  const [dropdown, setDropdown]           = useState<TrackResult[]>([])
-  const [dropdownOpen, setDropdownOpen]   = useState(false)
-  const [searching, setSearching]         = useState(false)
-  const [selectedTrack, setSelectedTrack] = useState<TrackResult | null>(null)
+  const [searchInput, setSearchInput]         = useState('')
+  const [dropdown, setDropdown]               = useState<TrackResult[]>([])
+  const [dropdownOpen, setDropdownOpen]       = useState(false)
+  const [searching, setSearching]             = useState(false)
+  const [selectedTrack, setSelectedTrack]     = useState<TrackResult | null>(null)
+
+  const [showArtistIdInput, setShowArtistIdInput] = useState(false)
+  const [artistIdInput, setArtistIdInput]         = useState('')
+  const [artistIdSearching, setArtistIdSearching] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRef   = useRef<HTMLDivElement>(null)
@@ -74,6 +91,9 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
   useEffect(() => {
     if (!open) return
+
+    setShowArtistIdInput(false)
+    setArtistIdInput('')
 
     if (editItem) {
       setTitle(editItem.title)
@@ -128,6 +148,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     if (!value.trim()) {
       setDropdown([])
       setDropdownOpen(false)
+      setShowArtistIdInput(false)
       return
     }
     setSearching(true)
@@ -146,6 +167,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
             preview_url: t.preview,
           })))
           setDropdownOpen(true)
+          setShowArtistIdInput(false)
           return
         }
 
@@ -160,29 +182,23 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
             duration_seconds: t.duration_seconds,
           })))
           setDropdownOpen(true)
+          setShowArtistIdInput(false)
           return
         }
 
-        // Step 3: iTunes fallback
+        // Step 3: iTunes fallback (includes Japanese query transformation server-side)
         const itunesTracks = await searchITunes(value)
         if (itunesTracks.length > 0) {
-          setDropdown(itunesTracks.map((t) => ({
-            source: 'itunes' as const,
-            id: String(t.trackId),
-            title: t.trackName,
-            artist: t.artistName,
-            duration_seconds: t.trackTimeMillis ? Math.floor(t.trackTimeMillis / 1000) : 0,
-            cover_url: t.artworkUrl60,
-            preview_url: t.previewUrl,
-            apple_music_url: t.trackViewUrl,
-          })))
+          setDropdown(itunesTracks.map(itunesTrackToResult))
           setDropdownOpen(true)
+          setShowArtistIdInput(false)
           return
         }
 
-        // Step 4: no results → open manual form
+        // Step 4: all failed → show artistId input + open manual form
         setDropdown([])
         setDropdownOpen(false)
+        setShowArtistIdInput(true)
         setManualOpen(true)
       } catch {
         toast.error('検索に失敗しました')
@@ -191,6 +207,29 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       }
     }, 300)
   }, [])
+
+  const handleArtistIdLookup = useCallback(async () => {
+    const id = extractArtistId(artistIdInput)
+    if (!id) {
+      toast.error('有効なArtistIDまたはApple Music URLを入力してください')
+      return
+    }
+    setArtistIdSearching(true)
+    try {
+      const tracks = await lookupITunesByArtistId(id)
+      if (tracks.length > 0) {
+        setDropdown(tracks.map(itunesTrackToResult))
+        setDropdownOpen(true)
+        setShowArtistIdInput(false)
+      } else {
+        toast.error('楽曲が見つかりませんでした')
+      }
+    } catch {
+      toast.error('検索に失敗しました')
+    } finally {
+      setArtistIdSearching(false)
+    }
+  }, [artistIdInput])
 
   const handleSelectTrack = (result: TrackResult) => {
     setSelectedTrack(result)
@@ -216,6 +255,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setSearchInput('')
     setDropdown([])
     setDropdownOpen(false)
+    setShowArtistIdInput(false)
   }
 
   const clearSelectedTrack = () => {
@@ -267,7 +307,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
         <div className="space-y-4">
 
-          {/* Search (Deezer → MusicBrainz → manual) */}
+          {/* Search box */}
           {showSearch && (
             <div ref={searchRef} className="relative">
               <p className="text-xs font-medium text-primary mb-1.5">{t('searchDeezer')}</p>
@@ -350,6 +390,37 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* artistId lookup (shown when all APIs return 0 results) */}
+          {showSearch && showArtistIdInput && !selectedTrack && (
+            <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Apple MusicでアーティストページのURLを開き、末尾のIDを入力してください
+              </p>
+              <p className="text-[11px] text-muted-foreground/50 font-mono break-all">
+                music.apple.com/jp/artist/名前/<span className="text-pink-400">1513117188</span>
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={artistIdInput}
+                  onChange={(e) => setArtistIdInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleArtistIdLookup() }}
+                  placeholder="URLまたはArtistID（数字）"
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground h-9 text-sm flex-1"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleArtistIdLookup}
+                  disabled={!artistIdInput.trim() || artistIdSearching}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 flex-shrink-0"
+                >
+                  {artistIdSearching
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : '検索'}
+                </Button>
+              </div>
             </div>
           )}
 
