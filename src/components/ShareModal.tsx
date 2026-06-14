@@ -58,12 +58,13 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
     const dateStr = setlist.event_date
       ? format(new Date(setlist.event_date), 'yyyy/M/d')
       : ''
+    const dateVenueStr = [dateStr, setlist.venue_name].filter(Boolean).join(' @ ')
 
     const songs = setlist.items.filter((i) => i.type === 'song').map((i) => i.title)
 
     const text = [
       `🎵Setlist from ${setlist.band_name}`,
-      dateStr,
+      dateVenueStr,
       t('twitterStreamingLine'),
       ...songs,
       '#SETLOG #setlist',
