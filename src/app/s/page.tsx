@@ -12,6 +12,7 @@ import { ja } from 'date-fns/locale'
 import { useTranslations } from 'next-intl'
 import type { Setlist, SetlistItem } from '@/types'
 import AdBanner from '@/components/AdBanner'
+import AppFooter from '@/components/AppFooter'
 
 const typeIcon: Record<string, string> = {
   song: '🎵', mc: '🎤', se: '🔊',
@@ -233,6 +234,7 @@ export default function PublicPage() {
 
         <AdBanner />
       </main>
+      <AppFooter />
     </div>
   )
 }

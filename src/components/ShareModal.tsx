@@ -165,19 +165,21 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
 
     // Footer
     ctx.fillStyle = '#1a1a1a'
-    ctx.fillRect(0, H - 80, W, 80)
+    ctx.fillRect(0, H - 100, W, 100)
     ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 20px sans-serif'
+    ctx.font = 'bold 22px sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText('SETLOG', 50, H - 45)
-    ctx.fillStyle = '#666'
-    ctx.font = '14px sans-serif'
-    const footerUrl = displayUrl.length > 50 ? displayUrl.slice(0, 48) + '…' : displayUrl
-    ctx.fillText(footerUrl, 50, H - 20)
+    ctx.fillText('SETLOG', 50, H - 60)
     ctx.fillStyle = '#888'
     ctx.textAlign = 'right'
-    ctx.fillText(formatSeconds(totalSeconds), W - 220, H - 35)
+    ctx.fillText(formatSeconds(totalSeconds), W - 220, H - 60)
     ctx.textAlign = 'left'
+    ctx.fillStyle = '#555'
+    ctx.font = '13px sans-serif'
+    const footerUrl = displayUrl.length > 50 ? displayUrl.slice(0, 48) + '…' : displayUrl
+    ctx.fillText(footerUrl, 50, H - 35)
+    ctx.fillStyle = '#444'
+    ctx.fillText('© 2026– SETLOG by Yowofuru LLC / Yoshimisiki', 50, H - 15)
 
     const link = document.createElement('a')
     link.download = `setlog-${Date.now()}.png`

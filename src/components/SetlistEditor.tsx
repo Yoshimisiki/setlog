@@ -22,6 +22,7 @@ import type { Setlist, SetlistItem, ItemType } from '@/types'
 import SortableItem from './SortableItem'
 import AddItemModal from './AddItemModal'
 import ShareModal from './ShareModal'
+import AppFooter from './AppFooter'
 
 interface Props {
   initialSetlist?: Setlist
@@ -291,6 +292,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
         onClose={() => setShareOpen(false)}
         setlist={setlist}
       />
+      <AppFooter />
     </main>
   )
 }
