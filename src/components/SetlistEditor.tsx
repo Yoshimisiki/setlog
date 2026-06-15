@@ -113,10 +113,11 @@ export default function SetlistEditor({ initialSetlist }: Props) {
     setAddModalOpen(true)
   }
 
+  const hasInfinite = setlist.items.some(i => i.duration_seconds === 0)
   const totalSeconds = setlist.items.reduce((s, i) => s + i.duration_seconds, 0)
   const targetSeconds = setlist.target_seconds
-  const progressPct = Math.min((totalSeconds / Math.max(targetSeconds, 1)) * 100, 100)
-  const status = getTimingStatus(totalSeconds, targetSeconds)
+  const progressPct = hasInfinite ? 100 : Math.min((totalSeconds / Math.max(targetSeconds, 1)) * 100, 100)
+  const status = hasInfinite ? 'near' : getTimingStatus(totalSeconds, targetSeconds)
 
   const statusColor  = { under: 'text-green-400', near: 'text-yellow-400', over: 'text-red-400' }[status]
   const progressColor = { under: 'bg-green-500',  near: 'bg-yellow-500',  over: 'bg-red-500'   }[status]
@@ -215,7 +216,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{t('editor.totalTime')}</span>
           <span className={cn('font-mono font-semibold text-lg', statusColor)}>
-            {formatSeconds(totalSeconds)}
+            {hasInfinite ? '∞' : formatSeconds(totalSeconds)}
             <span className="text-muted-foreground font-normal text-sm ml-1">
               / {targetMinutes}:00
             </span>
@@ -230,9 +231,11 @@ export default function SetlistEditor({ initialSetlist }: Props) {
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{t('editor.songs', { count: setlist.items.length })}</span>
           <span>
-            {totalSeconds <= targetSeconds
-              ? t('editor.remaining', { time: formatSeconds(targetSeconds - totalSeconds) })
-              : t('editor.over', { time: formatSeconds(totalSeconds - targetSeconds) })}
+            {hasInfinite
+              ? '∞'
+              : totalSeconds <= targetSeconds
+                ? t('editor.remaining', { time: formatSeconds(targetSeconds - totalSeconds) })
+                : t('editor.over', { time: formatSeconds(totalSeconds - targetSeconds) })}
           </span>
         </div>
       </div>
