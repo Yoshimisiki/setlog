@@ -42,19 +42,12 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
 
-  const tsToStr = (ts: number) =>
-    ts > 0 && ts < INFINITE ? String(Math.round(ts / 60)) : ''
-  const targetInputRef = useRef<HTMLInputElement>(null)
-
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
     if (!initialSetlist) {
       const loaded = loadCurrentSetlist()
       setSetlist(loaded)
-      if (targetInputRef.current) {
-        targetInputRef.current.value = tsToStr(loaded.target_seconds ?? 0)
-      }
     }
   }, [initialSetlist])
 
@@ -135,7 +128,23 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const progressColor = { under: 'bg-green-500',  near: 'bg-yellow-500',  over: 'bg-red-500'   }[status]
 
   const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0
-  // ↑ 表示用のみ（プログレス "/ 45:00" など）。入力欄はrawTargetMinutesで管理
+
+  const totalMinutes = setlist.target_seconds >= INFINITE ? 0 : Math.round((setlist.target_seconds ?? 0) / 60)
+  const hundreds = Math.floor(totalMinutes / 100)
+  const tens = Math.floor((totalMinutes % 100) / 10)
+  const ones = totalMinutes % 10
+
+  const updateDigit = (place: 'hundreds' | 'tens' | 'ones', delta: number) => {
+    const current = totalMinutes === 0 ? 45 : totalMinutes
+    let h = Math.floor(current / 100)
+    let t = Math.floor((current % 100) / 10)
+    let o = current % 10
+    if (place === 'hundreds') h = Math.max(0, Math.min(9, h + delta))
+    if (place === 'tens') t = Math.max(0, Math.min(9, t + delta))
+    if (place === 'ones') o = Math.max(0, Math.min(9, o + delta))
+    const newMinutes = h * 100 + t * 10 + o
+    setField('target_seconds', newMinutes === 0 ? INFINITE : newMinutes * 60)
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
@@ -153,9 +162,6 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
               const def = defaultSetlist()
               update(def)
-              if (targetInputRef.current) {
-                targetInputRef.current.value = tsToStr(def.target_seconds ?? 0)
-              }
               toast.success(t('editor.newSetlistSuccess'))
             }}
           >
@@ -218,21 +224,27 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <input
-              ref={targetInputRef}
-              type="tel"
-              defaultValue={tsToStr(setlist.target_seconds)}
-              placeholder="∞"
-              onBlur={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, '')
-                const num = parseInt(raw, 10)
-                const secs = isNaN(num) || num === 0 ? INFINITE : num * 60
-                setField('target_seconds', secs)
-                e.target.value = num > 0 ? String(num) : ''
-              }}
-              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-              className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
-            />
+            <div className="flex items-center gap-0.5">
+              {(['hundreds', 'tens', 'ones'] as const).map((place, i) => {
+                const digit = [hundreds, tens, ones][i]
+                return (
+                  <div key={place} className="flex flex-col items-center">
+                    <button
+                      className="w-8 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground text-[10px] leading-none"
+                      onClick={() => updateDigit(place, 1)}
+                    >▲</button>
+                    <span className="font-mono text-xl w-8 text-center text-foreground leading-tight select-none">
+                      {totalMinutes === 0 ? (i === 0 ? '∞' : ' ') : digit}
+                    </span>
+                    <button
+                      className="w-8 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground text-[10px] leading-none"
+                      onClick={() => updateDigit(place, -1)}
+                    >▼</button>
+                  </div>
+                )
+              })}
+              <span className="text-sm text-muted-foreground ml-1">分</span>
+            </div>
           </div>
         </div>
       </div>
