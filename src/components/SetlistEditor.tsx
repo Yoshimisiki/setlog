@@ -222,10 +222,13 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               type="tel"
               placeholder="∞"
               onFocus={() => { isFocused.current = true }}
-              onBlur={() => { isFocused.current = false }}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '')
                 e.target.value = raw
+              }}
+              onBlur={(e) => {
+                isFocused.current = false
+                const raw = e.target.value
                 const num = parseInt(raw, 10)
                 setField('target_seconds', isNaN(num) || num === 0 ? INFINITE : num * 60)
               }}
