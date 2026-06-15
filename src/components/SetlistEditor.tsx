@@ -39,6 +39,9 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
+  const [targetInput, setTargetInput] = useState(
+    setlist.target_seconds > 0 ? String(Math.round(setlist.target_seconds / 60)) : ''
+  )
 
   useEffect(() => {
     if (initialized.current) return
@@ -204,32 +207,18 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <div className="flex items-center h-8 bg-input border border-border rounded-md overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setField('target_seconds', targetSeconds > 60 ? targetSeconds - 60 : 0)}
-                className="h-8 w-8 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-base"
-              >−</button>
-              <input
-                key={targetSeconds}
-                type="text"
-                inputMode="numeric"
-                defaultValue={targetMinutes === 0 ? '' : String(targetMinutes)}
-                placeholder="∞"
-                onFocus={(e) => e.target.select()}
-                onBlur={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
-                }}
-                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-                className="flex-1 text-center text-sm bg-transparent text-foreground placeholder:text-muted-foreground outline-none min-w-0"
-              />
-              <button
-                type="button"
-                onClick={() => setField('target_seconds', (targetMinutes + 1) * 60)}
-                className="h-8 w-8 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-base"
-              >＋</button>
-            </div>
+            <input
+              type="tel"
+              value={targetInput}
+              placeholder="∞"
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, '')
+                setTargetInput(raw)
+                const num = parseInt(raw)
+                setField('target_seconds', isNaN(num) || num === 0 ? 0 : num * 60)
+              }}
+              className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
+            />
           </div>
         </div>
       </div>
