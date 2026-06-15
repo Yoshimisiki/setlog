@@ -39,15 +39,13 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
-  // contentEditableのkey: ロード・リセット時にDOMを作り直す
-  const [contentKey, setContentKey] = useState(0)
+  const [targetEditing, setTargetEditing] = useState(false)
 
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
     if (!initialSetlist) {
       setSetlist(loadCurrentSetlist())
-      setContentKey(k => k + 1)
     }
   }, [initialSetlist])
 
@@ -145,7 +143,6 @@ export default function SetlistEditor({ initialSetlist }: Props) {
             onClick={() => {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
               update(defaultSetlist())
-              setContentKey(k => k + 1)
               toast.success(t('editor.newSetlistSuccess'))
             }}
           >
@@ -208,31 +205,41 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <div
-              key={contentKey}
-              contentEditable
-              suppressContentEditableWarning
-              inputMode="numeric"
-              onInput={(e) => {
-                const val = e.currentTarget.textContent ?? ''
-                const num = parseInt(val, 10)
-                setField('target_seconds', isNaN(num) || num <= 0 ? 0 : num * 60)
-              }}
-              onFocus={(e) => {
-                const range = document.createRange()
-                range.selectNodeContents(e.currentTarget)
-                window.getSelection()?.removeAllRanges()
-                window.getSelection()?.addRange(range)
-              }}
-              onKeyDown={(e) => {
-                // 数字・バックスペース・Delete・矢印キーのみ許可
-                if (!/^\d$/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key)) {
-                  e.preventDefault()
-                }
-              }}
-              className="target-minutes-ce bg-input border border-border text-foreground rounded-md h-8 text-sm px-3 flex items-center outline-none focus:ring-2 focus:ring-ring min-w-0"
-            >
-              {targetSeconds > 0 ? String(Math.floor(targetSeconds / 60)) : ''}
+            <div className="flex items-center h-8 bg-input border border-border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setField('target_seconds', targetSeconds > 60 ? targetSeconds - 60 : 0)}
+                className="h-8 w-8 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-base"
+              >−</button>
+              <span
+                className="flex-1 text-center text-sm text-foreground cursor-pointer select-none"
+                onClick={() => setTargetEditing(true)}
+              >
+                {targetEditing ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    inputMode="numeric"
+                    defaultValue={targetMinutes === 0 ? '' : String(targetMinutes)}
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value, 10)
+                      setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
+                      setTargetEditing(false)
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                    className="w-full text-center text-sm bg-transparent text-foreground outline-none"
+                  />
+                ) : (
+                  <span className="text-muted-foreground">
+                    {targetMinutes === 0 ? '∞' : targetMinutes}
+                  </span>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => setField('target_seconds', (targetMinutes + 1) * 60)}
+                className="h-8 w-8 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-base"
+              >＋</button>
             </div>
           </div>
         </div>
