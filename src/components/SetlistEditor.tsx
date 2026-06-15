@@ -42,16 +42,15 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
   const targetInputRef = useRef<HTMLInputElement>(null)
+  const isFocused = useRef(false)
 
-  // target_secondsが外から変わったときにinputのDOM値を同期
   useEffect(() => {
+    if (isFocused.current) return
     const el = targetInputRef.current
     if (!el) return
-    if (setlist.target_seconds === 0 || setlist.target_seconds >= INFINITE) {
-      el.value = ''
-    } else {
-      el.value = String(Math.round(setlist.target_seconds / 60))
-    }
+    el.value = setlist.target_seconds === 0 || setlist.target_seconds >= INFINITE
+      ? ''
+      : String(Math.round(setlist.target_seconds / 60))
   }, [setlist.target_seconds])
 
   useEffect(() => {
@@ -222,6 +221,8 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               ref={targetInputRef}
               type="tel"
               placeholder="∞"
+              onFocus={() => { isFocused.current = true }}
+              onBlur={() => { isFocused.current = false }}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '')
                 e.target.value = raw
