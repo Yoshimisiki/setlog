@@ -45,15 +45,6 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const isFocused = useRef(false)
 
   useEffect(() => {
-    if (isFocused.current) return
-    const el = targetInputRef.current
-    if (!el) return
-    el.value = setlist.target_seconds === 0 || setlist.target_seconds >= INFINITE
-      ? ''
-      : String(Math.round(setlist.target_seconds / 60))
-  }, [setlist.target_seconds])
-
-  useEffect(() => {
     if (initialized.current) return
     initialized.current = true
     if (!initialSetlist) {
@@ -221,16 +212,15 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               ref={targetInputRef}
               type="tel"
               placeholder="∞"
-              onFocus={(e) => { isFocused.current = true; e.target.select() }}
+              onFocus={() => { isFocused.current = true }}
               onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, '')
-                e.target.value = raw
+                e.target.value = e.target.value.replace(/[^0-9]/g, '')
               }}
               onBlur={(e) => {
                 isFocused.current = false
-                const raw = e.target.value
-                const num = parseInt(raw, 10)
+                const num = parseInt(e.target.value, 10)
                 setField('target_seconds', isNaN(num) || num === 0 ? INFINITE : num * 60)
+                e.target.value = isNaN(num) || num === 0 ? '' : String(num)
               }}
               className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
             />
