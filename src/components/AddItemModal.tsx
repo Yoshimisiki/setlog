@@ -322,14 +322,21 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setShowArtistIdInput(false)
   }
 
-  const handleYoutubeBlur = async (url: string) => {
-    if (!url.trim()) return
+  const extractVideoId = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+    return match ? match[1] : null
+  }
+
+  const handleYoutubeChange = async (url: string) => {
+    setYoutubeUrl(url)
+    const videoId = extractVideoId(url)
+    if (!videoId) return
     try {
       const res = await fetch(`/api/youtube/info?url=${encodeURIComponent(url)}`)
       if (!res.ok) return
       const data = await res.json()
       if (data.title) setTitle(data.title)
-      if (data.duration_seconds && !duration) {
+      if (data.duration_seconds) {
         const m = Math.floor(data.duration_seconds / 60)
         const s = data.duration_seconds % 60
         setDuration(`${m}:${s.toString().padStart(2, '0')}`)
@@ -641,8 +648,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                   <Label className="text-xs text-muted-foreground">YouTube URL（任意）</Label>
                   <Input
                     value={youtubeUrl}
-                    onChange={(e) => setYoutubeUrl(e.target.value)}
-                    onBlur={(e) => handleYoutubeBlur(e.target.value)}
+                    onChange={(e) => handleYoutubeChange(e.target.value)}
                     placeholder="https://youtube.com/watch?v=..."
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                     autoCapitalize="none"
