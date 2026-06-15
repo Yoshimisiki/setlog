@@ -11,7 +11,7 @@ import { parseMMSS, formatSeconds } from '@/lib/utils'
 import { searchTracks } from '@/lib/deezer'
 import { searchMusicBrainz } from '@/lib/musicbrainz'
 import { searchITunes, lookupITunesByArtistId, extractArtistId, type ITunesTrack } from '@/lib/itunes'
-import { Loader2, Music, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Loader2, Music, X, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { useTranslations } from 'next-intl'
@@ -58,9 +58,18 @@ function itunesTrackToResult(t: ITunesTrack): TrackResult {
   }
 }
 
+// ④ 検索クエリをアーティスト・曲名から合成
+function buildQuery(artist: string, song: string, unified: string, detailed: boolean): string {
+  if (!detailed) return unified
+  const parts = [artist.trim(), song.trim()].filter(Boolean)
+  return parts.join(' ')
+}
+
 export default function AddItemModal({ open, onClose, itemType, editItem, onSave }: Props) {
   const t = useTranslations('addItem')
   const tc = useTranslations('common')
+
+  // フォーム状態
   const [title, setTitle]               = useState('')
   const [artist, setArtist]             = useState('')
   const [duration, setDuration]         = useState('')
@@ -70,7 +79,11 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [appleMusicUrl, setAppleMusicUrl] = useState('')
   const [manualOpen, setManualOpen]     = useState(false)
 
+  // 検索状態
   const [searchInput, setSearchInput]         = useState('')
+  const [searchArtist, setSearchArtist]       = useState('')  // ④
+  const [searchSong, setSearchSong]           = useState('')  // ④
+  const [detailedSearch, setDetailedSearch]   = useState(false) // ④
   const [dropdown, setDropdown]               = useState<TrackResult[]>([])
   const [dropdownOpen, setDropdownOpen]       = useState(false)
   const [searching, setSearching]             = useState(false)
@@ -80,8 +93,33 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [artistIdInput, setArtistIdInput]         = useState('')
   const [artistIdSearching, setArtistIdSearching] = useState(false)
 
+  // ① キーボード高さ検知（visualViewport API）
+  const [kbHeight, setKbHeight] = useState(0)
+  const [vpHeight, setVpHeight] = useState(0)
+
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    setVpHeight(vv.height)
+    const update = () => {
+      const kh = Math.max(0, window.innerHeight - vv.offsetTop - vv.height)
+      setKbHeight(kh)
+      setVpHeight(vv.height)
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRef   = useRef<HTMLDivElement>(null)
+
+  // ② ドロップダウンスクロール検知
+  const dropdownScrolling    = useRef(false)
+  const dropdownTouchStartY  = useRef(0)
 
   const labelMap: Record<ItemType, string> = {
     song: editItem ? t('editSong') : t('addSong'),
@@ -94,11 +132,14 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
     setShowArtistIdInput(false)
     setArtistIdInput('')
+    setDetailedSearch(false)
+    setSearchArtist('')
+    setSearchSong('')
 
     if (editItem) {
       setTitle(editItem.title)
       setArtist(editItem.artist ?? '')
-      setDuration(formatSeconds(editItem.duration_seconds))
+      setDuration(editItem.duration_seconds > 0 ? formatSeconds(editItem.duration_seconds) : '')
       setNote(editItem.note ?? '')
       setDeezerId(editItem.deezer_id ?? '')
       setPreviewUrl(editItem.preview_url ?? '')
@@ -142,6 +183,71 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  // ② 各API 5秒タイムアウト（lib側に実装済み）、エラー時もfinally でローディング解除
+  const runSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setDropdown([])
+      setDropdownOpen(false)
+      setShowArtistIdInput(false)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    try {
+      // Step 1: Deezer
+      const deezerTracks = await searchTracks(query).catch(() => [])
+      if (deezerTracks.length > 0) {
+        setDropdown(deezerTracks.map((t) => ({
+          source: 'deezer' as const,
+          id: String(t.id),
+          title: t.title,
+          artist: t.artist.name,
+          duration_seconds: t.duration,
+          cover_url: t.album.cover_small,
+          preview_url: t.preview,
+        })))
+        setDropdownOpen(true)
+        setShowArtistIdInput(false)
+        return
+      }
+
+      // Step 2: MusicBrainz（日本語はスキップ）
+      const isJP = /[぀-ゟ゠-ヿ一-鿿]/.test(query)
+      if (!isJP) {
+        const mbTracks = await searchMusicBrainz(query).catch(() => [])
+        if (mbTracks.length > 0) {
+          setDropdown(mbTracks.map((t) => ({
+            source: 'musicbrainz' as const,
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            duration_seconds: t.duration_seconds,
+          })))
+          setDropdownOpen(true)
+          setShowArtistIdInput(false)
+          return
+        }
+      }
+
+      // Step 3: iTunes
+      const itunesTracks = await searchITunes(query).catch(() => [])
+      if (itunesTracks.length > 0) {
+        setDropdown(itunesTracks.map(itunesTrackToResult))
+        setDropdownOpen(true)
+        setShowArtistIdInput(false)
+        return
+      }
+
+      // Step 4: 全滅 → artistId入力UI
+      setDropdown([])
+      setDropdownOpen(false)
+      setShowArtistIdInput(true)
+      setManualOpen(true)
+    } finally {
+      setSearching(false)
+    }
+  }, [])
+
   const handleSearchInput = useCallback((value: string) => {
     setSearchInput(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -149,67 +255,23 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setDropdown([])
       setDropdownOpen(false)
       setShowArtistIdInput(false)
+      setSearching(false)
       return
     }
     setSearching(true)
-    debounceRef.current = setTimeout(async () => {
-      try {
-        // Step 1: Deezer
-        const deezerTracks = await searchTracks(value)
-        if (deezerTracks.length > 0) {
-          setDropdown(deezerTracks.map((t) => ({
-            source: 'deezer' as const,
-            id: String(t.id),
-            title: t.title,
-            artist: t.artist.name,
-            duration_seconds: t.duration,
-            cover_url: t.album.cover_small,
-            preview_url: t.preview,
-          })))
-          setDropdownOpen(true)
-          setShowArtistIdInput(false)
-          return
-        }
-
-        // Step 2: MusicBrainz fallback（日本語クエリはスキップ）
-        const isJP = /[぀-ゟ゠-ヿ一-鿿]/.test(value)
-        if (!isJP) {
-          const mbTracks = await searchMusicBrainz(value)
-          if (mbTracks.length > 0) {
-            setDropdown(mbTracks.map((t) => ({
-              source: 'musicbrainz' as const,
-              id: t.id,
-              title: t.title,
-              artist: t.artist,
-              duration_seconds: t.duration_seconds,
-            })))
-            setDropdownOpen(true)
-            setShowArtistIdInput(false)
-            return
-          }
-        }
-
-        // Step 3: iTunes fallback
-        const itunesTracks = await searchITunes(value)
-        if (itunesTracks.length > 0) {
-          setDropdown(itunesTracks.map(itunesTrackToResult))
-          setDropdownOpen(true)
-          setShowArtistIdInput(false)
-          return
-        }
-
-        // Step 4: all failed → show artistId input + open manual form
-        setDropdown([])
-        setDropdownOpen(false)
-        setShowArtistIdInput(true)
-        setManualOpen(true)
-      } catch {
-        toast.error('検索に失敗しました')
-      } finally {
-        setSearching(false)
-      }
+    debounceRef.current = setTimeout(() => {
+      const q = buildQuery('', '', value, false)
+      runSearch(q)
     }, 300)
-  }, [])
+  }, [runSearch])
+
+  // ④ 詳細検索（アーティスト名 / 曲名 個別入力）
+  const handleDetailedSearch = useCallback(() => {
+    const q = buildQuery(searchArtist, searchSong, '', true)
+    if (!q) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    runSearch(q)
+  }, [searchArtist, searchSong, runSearch])
 
   const handleArtistIdLookup = useCallback(async () => {
     const id = extractArtistId(artistIdInput)
@@ -256,6 +318,8 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     }
 
     setSearchInput('')
+    setSearchArtist('')
+    setSearchSong('')
     setDropdown([])
     setDropdownOpen(false)
     setShowArtistIdInput(false)
@@ -274,12 +338,8 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       toast.error(t('titleRequired'))
       return
     }
-    const secs = parseMMSS(duration)
-    if (secs <= 0) {
-      setManualOpen(true)
-      toast.error(t('timeRequired'))
-      return
-    }
+    // ⑤ 空欄は0秒として許容
+    const secs = duration.trim() ? parseMMSS(duration) : 0
 
     onSave({
       id: editItem?.id ?? nanoid(8),
@@ -295,12 +355,44 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     onClose()
   }
 
+  // ① キーボード押し上げ用スタイル
+  const dialogStyle: React.CSSProperties = {
+    top: kbHeight > 0 ? `calc(50% - ${kbHeight / 2}px)` : undefined,
+    maxHeight: vpHeight > 0 ? `${vpHeight - 48}px` : undefined,
+    paddingBottom: `max(24px, env(safe-area-inset-bottom))`,
+  }
+
+  // ① スワイプでキーボードを閉じる（入力フィールド上では発動しない）
+  const handleTouchStart = useRef<{ y: number; onInput: boolean } | null>(null)
+  const handleTouchStartFn = (e: React.TouchEvent) => {
+    const tag = (e.target as HTMLElement).tagName
+    handleTouchStart.current = {
+      y: e.touches[0].clientY,
+      onInput: tag === 'INPUT' || tag === 'TEXTAREA',
+    }
+  }
+  const handleTouchMoveFn = (e: React.TouchEvent) => {
+    if (!handleTouchStart.current) return
+    if (handleTouchStart.current.onInput) return
+    const dy = e.touches[0].clientY - handleTouchStart.current.y
+    if (dy > 20) {
+      const el = document.activeElement
+      if (el instanceof HTMLElement) el.blur()
+    }
+  }
+
   const showSearch = hasSearch(itemType)
   const isMC = itemType === 'mc'
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="bg-card border-border max-w-md w-full max-h-[90vh] overflow-y-auto">
+      {/* ① ③ キーボード対応・セーフエリア対応 */}
+      <DialogContent
+        className="bg-card border-border max-w-md w-full overflow-y-auto"
+        style={dialogStyle}
+        onTouchStart={handleTouchStartFn}
+        onTouchMove={handleTouchMoveFn}
+      >
         <DialogHeader>
           <DialogTitle className="text-foreground">
             {labelMap[itemType]}
@@ -313,7 +405,28 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
           {/* Search box */}
           {showSearch && (
             <div ref={searchRef} className="relative">
-              <p className="text-xs font-medium text-primary mb-1.5">{t('searchDeezer')}</p>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-primary">{t('searchDeezer')}</p>
+                {/* ④ 詳細検索トグル */}
+                {!selectedTrack && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetailedSearch((v) => !v)
+                      setDropdown([])
+                      setDropdownOpen(false)
+                    }}
+                    className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      detailedSearch
+                        ? 'border-primary text-primary bg-primary/10'
+                        : 'border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-2.5 h-2.5" />
+                    詳細
+                  </button>
+                )}
+              </div>
 
               {selectedTrack ? (
                 <div className="flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-xl px-3 py-3">
@@ -331,14 +444,48 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                       <SourceBadge source={selectedTrack.source} />
                     </div>
                   </div>
+                  {/* ③ タップ領域 44px */}
                   <button
                     onClick={clearSelectedTrack}
-                    className="text-muted-foreground hover:text-foreground flex-shrink-0 p-1"
+                    className="text-muted-foreground hover:text-foreground flex-shrink-0 w-11 h-11 flex items-center justify-center"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+              ) : detailedSearch ? (
+                /* ④ 詳細検索UI */
+                <div className="space-y-2">
+                  <Input
+                    value={searchArtist}
+                    onChange={(e) => setSearchArtist(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleDetailedSearch() }}
+                    placeholder="アーティスト名"
+                    className="bg-input border-primary/40 focus-visible:ring-primary text-foreground placeholder:text-muted-foreground h-11 text-base"
+                    autoComplete="off"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={searchSong}
+                      onChange={(e) => setSearchSong(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleDetailedSearch() }}
+                      placeholder="曲名（省略可）"
+                      className="bg-input border-primary/40 focus-visible:ring-primary text-foreground placeholder:text-muted-foreground h-11 text-base flex-1"
+                      autoComplete="off"
+                    />
+                    <Button
+                      onClick={handleDetailedSearch}
+                      disabled={(!searchArtist.trim() && !searchSong.trim()) || searching}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 flex-shrink-0"
+                    >
+                      {searching
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : '検索'}
+                    </Button>
+                  </div>
+                </div>
               ) : (
+                /* 通常検索UI */
                 <>
                   <div className="relative">
                     <Input
@@ -356,47 +503,57 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                       }
                     </div>
                   </div>
-
-                  {dropdownOpen && dropdown.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-xl divide-y divide-border max-h-64 overflow-y-auto">
-                      {dropdown.map((result) => (
-                        <button
-                          key={`${result.source}-${result.id}`}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/60 transition-colors text-left"
-                          onMouseDown={(e) => {
-                            e.preventDefault()
-                            handleSelectTrack(result)
-                          }}
-                        >
-                          {result.cover_url ? (
-                            <img src={result.cover_url} alt="" className="w-9 h-9 rounded flex-shrink-0" />
-                          ) : (
-                            <div className="w-9 h-9 rounded bg-secondary flex items-center justify-center flex-shrink-0">
-                              <Music className="w-3 h-3 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate text-foreground">{result.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{result.artist}</p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {result.duration_seconds > 0 && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {formatSeconds(result.duration_seconds)}
-                              </span>
-                            )}
-                            <SourceBadge source={result.source} />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </>
+              )}
+
+              {/* 検索結果ドロップダウン */}
+              {dropdownOpen && dropdown.length > 0 && (
+                <div
+                  className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-xl divide-y divide-border max-h-64 overflow-y-auto"
+                  onTouchStart={(e) => {
+                    dropdownScrolling.current = false
+                    dropdownTouchStartY.current = e.touches[0].clientY
+                  }}
+                  onTouchMove={(e) => {
+                    if (Math.abs(e.touches[0].clientY - dropdownTouchStartY.current) > 8) {
+                      dropdownScrolling.current = true
+                    }
+                  }}
+                >
+                  {dropdown.map((result) => (
+                    <button
+                      key={`${result.source}-${result.id}`}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/60 active:bg-secondary transition-colors text-left min-h-[44px]"
+                      onMouseDown={(e) => { e.preventDefault(); handleSelectTrack(result) }}
+                      onTouchEnd={(e) => { e.preventDefault(); if (!dropdownScrolling.current) handleSelectTrack(result) }}
+                    >
+                      {result.cover_url ? (
+                        <img src={result.cover_url} alt="" className="w-9 h-9 rounded flex-shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 rounded bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Music className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate text-foreground">{result.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{result.artist}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {result.duration_seconds > 0 && (
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {formatSeconds(result.duration_seconds)}
+                          </span>
+                        )}
+                        <SourceBadge source={result.source} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
-          {/* artistId lookup (shown when all APIs return 0 results) */}
+          {/* artistId lookup */}
           {showSearch && showArtistIdInput && !selectedTrack && (
             <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2">
               <p className="text-xs font-medium text-muted-foreground">
@@ -411,17 +568,14 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                   onChange={(e) => setArtistIdInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleArtistIdLookup() }}
                   placeholder="URLまたはArtistID（数字）"
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground h-9 text-sm flex-1"
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-sm flex-1"
                 />
                 <Button
-                  size="sm"
                   onClick={handleArtistIdLookup}
                   disabled={!artistIdInput.trim() || artistIdSearching}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 flex-shrink-0"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 flex-shrink-0"
                 >
-                  {artistIdSearching
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : '検索'}
+                  {artistIdSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : '検索'}
                 </Button>
               </div>
             </div>
@@ -432,7 +586,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
             <button
               type="button"
               onClick={() => setManualOpen((v) => !v)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full min-h-[44px]"
             >
               {manualOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               {showSearch
@@ -450,7 +604,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder={isMC ? 'MC' : ''}
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground h-9 text-sm"
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                   />
                 </div>
 
@@ -461,7 +615,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                       value={artist}
                       onChange={(e) => setArtist(e.target.value)}
                       placeholder={t('bandName')}
-                      className="bg-input border-border text-foreground placeholder:text-muted-foreground h-9 text-sm"
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                     />
                   </div>
                 )}
@@ -472,12 +626,14 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                     {(selectedTrack?.source === 'musicbrainz' || selectedTrack?.source === 'itunes') && (
                       <span className="ml-1.5 text-yellow-500/80 font-normal">（不正確な場合があります）</span>
                     )}
+                    {/* ⑤ 空欄許容の案内 */}
+                    <span className="ml-1.5 text-muted-foreground/50 font-normal">（空欄=0秒）</span>
                   </Label>
                   <Input
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="3:45"
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono h-9 text-sm"
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono h-11 text-base"
                   />
                 </div>
 
@@ -487,18 +643,19 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={t('memoPlaceholder')}
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground h-9 text-sm"
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                   />
                 </div>
               </div>
             )}
           </div>
 
+          {/* ③ ボタン 44px */}
           <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1 border-border text-foreground" onClick={onClose}>
+            <Button variant="outline" className="flex-1 border-border text-foreground h-11" onClick={onClose}>
               {tc('cancel')}
             </Button>
-            <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave}>
+            <Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-11" onClick={handleSave}>
               {editItem ? tc('update') : tc('add')}
             </Button>
           </div>

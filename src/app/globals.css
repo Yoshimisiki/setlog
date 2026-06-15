@@ -104,3 +104,6 @@
 /* Drag handle */
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
+
+/* 持ち時間contentEditable placeholder */
+.target-minutes-ce:empty::before { content: '∞'; color: var(--muted-foreground); }

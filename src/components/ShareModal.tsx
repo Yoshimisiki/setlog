@@ -136,7 +136,7 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
       ctx.fillText(title, 90, y)
       ctx.fillStyle = '#444'
       ctx.textAlign = 'right'
-      ctx.fillText(formatSeconds(item.duration_seconds), W - 50, y)
+      ctx.fillText(item.duration_seconds > 0 ? formatSeconds(item.duration_seconds) : '∞', W - 50, y)
       ctx.textAlign = 'left'
     }
     if (setlist.items.length > 18) {
