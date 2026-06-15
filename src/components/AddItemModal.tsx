@@ -171,22 +171,25 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
           return
         }
 
-        // Step 2: MusicBrainz fallback
-        const mbTracks = await searchMusicBrainz(value)
-        if (mbTracks.length > 0) {
-          setDropdown(mbTracks.map((t) => ({
-            source: 'musicbrainz' as const,
-            id: t.id,
-            title: t.title,
-            artist: t.artist,
-            duration_seconds: t.duration_seconds,
-          })))
-          setDropdownOpen(true)
-          setShowArtistIdInput(false)
-          return
+        // Step 2: MusicBrainz fallback（日本語クエリはスキップ）
+        const isJP = /[぀-ゟ゠-ヿ一-鿿]/.test(value)
+        if (!isJP) {
+          const mbTracks = await searchMusicBrainz(value)
+          if (mbTracks.length > 0) {
+            setDropdown(mbTracks.map((t) => ({
+              source: 'musicbrainz' as const,
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              duration_seconds: t.duration_seconds,
+            })))
+            setDropdownOpen(true)
+            setShowArtistIdInput(false)
+            return
+          }
         }
 
-        // Step 3: iTunes fallback (includes Japanese query transformation server-side)
+        // Step 3: iTunes fallback
         const itunesTracks = await searchITunes(value)
         if (itunesTracks.length > 0) {
           setDropdown(itunesTracks.map(itunesTrackToResult))
