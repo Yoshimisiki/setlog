@@ -146,7 +146,7 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
     // Pre-generate QR data URL before drawing footer
     let qrImg: HTMLImageElement | null = null
     try {
-      const qrDataUrl = await QRCode.toDataURL(displayUrl, {
+      const qrDataUrl = await QRCode.toDataURL(longUrl, {
         width: 200,
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' },
