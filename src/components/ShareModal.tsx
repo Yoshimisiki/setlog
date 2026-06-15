@@ -23,27 +23,28 @@ interface Props {
 export default function ShareModal({ open, onClose, setlist }: Props) {
   const t = useTranslations('share')
   const [copied, setCopied] = useState(false)
-  const [shortUrl, setShortUrl] = useState<string | null>(null)
-  const [shortening, setShortening] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-  const encoded = encodeSetlist(setlist)
-  const longUrl = `${appUrl}/s#${encoded}`
-
-  const displayUrl = shortUrl ?? longUrl
+  const fallbackUrl = `${appUrl}/s#${encodeSetlist(setlist)}`
+  const displayUrl = shareUrl ?? fallbackUrl
   const totalSeconds = setlist.items.reduce((s, i) => s + i.duration_seconds, 0)
-  const songCount = setlist.items.filter((i) => i.type === 'song').length
 
-  // Shorten URL when modal opens
+  // Save to Supabase when modal opens
   useEffect(() => {
-    if (!open) { setShortUrl(null); return }
-    setShortening(true)
-    fetch(`/api/shorten?url=${encodeURIComponent(longUrl)}`)
+    if (!open) { setShareUrl(null); return }
+    setSaving(true)
+    fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: setlist }),
+    })
       .then((r) => r.json())
-      .then((d) => { if (d.short) setShortUrl(d.short) })
+      .then((d) => { if (d.id) setShareUrl(`${appUrl}/s/${d.id}`) })
       .catch(() => {})
-      .finally(() => setShortening(false))
+      .finally(() => setSaving(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -143,10 +144,10 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
       ctx.fillText(`+ ${setlist.items.length - 18} more`, 90, 300 + 18 * 40)
     }
 
-    // Pre-generate QR data URL before drawing footer
+    // Pre-generate QR (uses displayUrl — short if saved, fallback if not)
     let qrImg: HTMLImageElement | null = null
     try {
-      const qrDataUrl = await QRCode.toDataURL(longUrl, {
+      const qrDataUrl = await QRCode.toDataURL(displayUrl, {
         width: 200,
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' },
@@ -158,7 +159,7 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
       })
     } catch {}
 
-    // Footer (drawn before QR so QR appears on top)
+    // Footer
     const footerY = H - 100
     ctx.fillStyle = '#1a1a1a'
     ctx.fillRect(0, footerY, W, 100)
@@ -205,10 +206,10 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
         <div className="space-y-4">
           {/* URL display */}
           <div className="bg-secondary rounded-lg p-3 flex items-center gap-2 min-h-[52px]">
-            {shortening ? (
+            {saving ? (
               <div className="flex items-center gap-2 flex-1">
                 <Loader2 className="w-3 h-3 animate-spin text-muted-foreground flex-shrink-0" />
-                <span className="text-xs text-muted-foreground">短縮中...</span>
+                <span className="text-xs text-muted-foreground">URLを生成中...</span>
               </div>
             ) : (
               <code className="flex-1 text-xs text-foreground break-all line-clamp-2">{displayUrl}</code>
@@ -217,7 +218,7 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
               variant="ghost" size="icon"
               className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground"
               onClick={handleCopy}
-              disabled={shortening}
+              disabled={saving}
             >
               {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
             </Button>
@@ -228,7 +229,7 @@ export default function ShareModal({ open, onClose, setlist }: Props) {
             <Button
               onClick={handleTwitter}
               className="w-full bg-[#1d9bf0] text-white hover:bg-[#1d9bf0]/90"
-              disabled={shortening}
+              disabled={saving}
             >
               <Twitter className="w-4 h-4 mr-2" />
               {t('twitterShare')}
