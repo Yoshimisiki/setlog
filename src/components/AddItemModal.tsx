@@ -328,9 +328,11 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       const res = await fetch(`/api/youtube/info?url=${encodeURIComponent(url)}`)
       if (!res.ok) return
       const data = await res.json()
-      if (data.title && !title.trim()) setTitle(data.title)
-      if (data.duration_seconds > 0 && !duration.trim()) {
-        setDuration(formatSeconds(data.duration_seconds))
+      if (data.title) setTitle(data.title)
+      if (data.duration_seconds && !duration) {
+        const m = Math.floor(data.duration_seconds / 60)
+        const s = data.duration_seconds % 60
+        setDuration(`${m}:${s.toString().padStart(2, '0')}`)
       }
     } catch {}
   }
