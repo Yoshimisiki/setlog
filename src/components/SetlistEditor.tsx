@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, type RefObject } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   DndContext, closestCenter,
   KeyboardSensor, PointerSensor, useSensor, useSensors,
@@ -42,11 +42,9 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
 
-  // setlistと独立したstate。useEffect([setlist.target_seconds])で同期しないことがポイント。
-  // 同期するのはロード時・新規作成時だけ。これによりキー入力ごとのリセットが起きない。
   const tsToStr = (ts: number) =>
     ts > 0 && ts < INFINITE ? String(Math.round(ts / 60)) : ''
-  const [targetStr, setTargetStr] = useState(() => tsToStr(setlist.target_seconds))
+  const targetInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (initialized.current) return
@@ -54,7 +52,9 @@ export default function SetlistEditor({ initialSetlist }: Props) {
     if (!initialSetlist) {
       const loaded = loadCurrentSetlist()
       setSetlist(loaded)
-      setTargetStr(tsToStr(loaded.target_seconds ?? 0))
+      if (targetInputRef.current) {
+        targetInputRef.current.value = tsToStr(loaded.target_seconds ?? 0)
+      }
     }
   }, [initialSetlist])
 
@@ -153,7 +153,9 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
               const def = defaultSetlist()
               update(def)
-              setTargetStr(tsToStr(def.target_seconds ?? 0))
+              if (targetInputRef.current) {
+                targetInputRef.current.value = tsToStr(def.target_seconds ?? 0)
+              }
               toast.success(t('editor.newSetlistSuccess'))
             }}
           >
@@ -217,16 +219,16 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
             <input
+              ref={targetInputRef}
               type="tel"
-              value={targetStr}
+              defaultValue={tsToStr(setlist.target_seconds)}
               placeholder="∞"
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => setTargetStr(e.target.value.replace(/[^0-9]/g, ''))}
-              onBlur={() => {
-                const num = parseInt(targetStr, 10)
+              onBlur={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, '')
+                const num = parseInt(raw, 10)
                 const secs = isNaN(num) || num === 0 ? INFINITE : num * 60
                 setField('target_seconds', secs)
-                setTargetStr(num > 0 ? String(num) : '')
+                e.target.value = num > 0 ? String(num) : ''
               }}
               onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
               className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
