@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const UA = 'SETLOG/1.0 (https://setlog.yowofuru.com)'
+
 function katakanaToHiragana(str: string): string {
   return str.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
 }
@@ -19,24 +21,18 @@ function dedup(tracks: unknown[]): unknown[] {
 }
 
 async function searchByTerm(term: string): Promise<unknown[]> {
-  const base = `https://itunes.apple.com/search?entity=musicTrack&country=JP&limit=10`
-  const encoded = encodeURIComponent(term)
-  const [byArtist, bySong] = await Promise.all([
-    fetch(`${base}&attribute=artistTerm&term=${encoded}`, { next: { revalidate: 60 } }),
-    fetch(`${base}&attribute=songTerm&term=${encoded}`,   { next: { revalidate: 60 } }),
-  ])
-  const [a, s] = await Promise.all([
-    byArtist.ok ? byArtist.json() : { results: [] },
-    bySong.ok   ? bySong.json()   : { results: [] },
-  ])
-  return [...(a.results ?? []), ...(s.results ?? [])]
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=musicTrack&country=JP&limit=10`
+  const res = await fetch(url, { headers: { 'User-Agent': UA }, cache: 'no-store' })
+  console.log(`[itunes/search] term="${term}" status=${res.status}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.results ?? []
 }
 
 async function lookupByArtistId(artistId: string): Promise<unknown[]> {
-  const res = await fetch(
-    `https://itunes.apple.com/lookup?id=${artistId}&entity=song&country=JP&limit=25`,
-    { next: { revalidate: 60 } }
-  )
+  const url = `https://itunes.apple.com/lookup?id=${artistId}&entity=song&country=JP&limit=25`
+  const res = await fetch(url, { headers: { 'User-Agent': UA }, cache: 'no-store' })
+  console.log(`[itunes/search/lookup] artistId=${artistId} status=${res.status}`)
   if (!res.ok) return []
   const data = await res.json()
   return (data.results ?? []).filter(
