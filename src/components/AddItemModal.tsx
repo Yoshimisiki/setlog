@@ -117,6 +117,10 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRef   = useRef<HTMLDivElement>(null)
 
+  // ② ドロップダウンスクロール検知
+  const dropdownScrolling    = useRef(false)
+  const dropdownTouchStartY  = useRef(0)
+
   const labelMap: Record<ItemType, string> = {
     song: editItem ? t('editSong') : t('addSong'),
     mc:   editItem ? t('editMC')   : t('addMC'),
@@ -135,7 +139,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     if (editItem) {
       setTitle(editItem.title)
       setArtist(editItem.artist ?? '')
-      setDuration(formatSeconds(editItem.duration_seconds))
+      setDuration(editItem.duration_seconds > 0 ? formatSeconds(editItem.duration_seconds) : '')
       setNote(editItem.note ?? '')
       setDeezerId(editItem.deezer_id ?? '')
       setPreviewUrl(editItem.preview_url ?? '')
@@ -358,13 +362,18 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     paddingBottom: `max(24px, env(safe-area-inset-bottom))`,
   }
 
-  // ① スワイプでキーボードを閉じる
-  const handleTouchStart = useRef<{ y: number } | null>(null)
+  // ① スワイプでキーボードを閉じる（入力フィールド上では発動しない）
+  const handleTouchStart = useRef<{ y: number; onInput: boolean } | null>(null)
   const handleTouchStartFn = (e: React.TouchEvent) => {
-    handleTouchStart.current = { y: e.touches[0].clientY }
+    const tag = (e.target as HTMLElement).tagName
+    handleTouchStart.current = {
+      y: e.touches[0].clientY,
+      onInput: tag === 'INPUT' || tag === 'TEXTAREA',
+    }
   }
   const handleTouchMoveFn = (e: React.TouchEvent) => {
     if (!handleTouchStart.current) return
+    if (handleTouchStart.current.onInput) return
     const dy = e.touches[0].clientY - handleTouchStart.current.y
     if (dy > 20) {
       const el = document.activeElement
@@ -499,13 +508,24 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
               {/* 検索結果ドロップダウン */}
               {dropdownOpen && dropdown.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-xl divide-y divide-border max-h-64 overflow-y-auto">
+                <div
+                  className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-xl divide-y divide-border max-h-64 overflow-y-auto"
+                  onTouchStart={(e) => {
+                    dropdownScrolling.current = false
+                    dropdownTouchStartY.current = e.touches[0].clientY
+                  }}
+                  onTouchMove={(e) => {
+                    if (Math.abs(e.touches[0].clientY - dropdownTouchStartY.current) > 8) {
+                      dropdownScrolling.current = true
+                    }
+                  }}
+                >
                   {dropdown.map((result) => (
                     <button
                       key={`${result.source}-${result.id}`}
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/60 active:bg-secondary transition-colors text-left min-h-[44px]"
                       onMouseDown={(e) => { e.preventDefault(); handleSelectTrack(result) }}
-                      onTouchEnd={(e) => { e.preventDefault(); handleSelectTrack(result) }}
+                      onTouchEnd={(e) => { e.preventDefault(); if (!dropdownScrolling.current) handleSelectTrack(result) }}
                     >
                       {result.cover_url ? (
                         <img src={result.cover_url} alt="" className="w-9 h-9 rounded flex-shrink-0" />
