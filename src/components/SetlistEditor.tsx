@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { formatSeconds, getTimingStatus, cn } from '@/lib/utils'
 import { saveCurrentSetlist, loadCurrentSetlist, defaultSetlist } from '@/lib/storage'
 import { toast } from 'sonner'
-import { Plus, Mic2, Radio, Link2, ListMusic, FilePlus } from 'lucide-react'
+import { Plus, Mic2, Radio, Link2, ListMusic, FilePlus, ChevronUp, ChevronDown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import type { Setlist, SetlistItem, ItemType } from '@/types'
@@ -224,26 +224,30 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <div className="flex items-center gap-0.5">
+            <div className="bg-input border border-border rounded-md h-8 px-2 flex items-center gap-0.5">
               {(['hundreds', 'tens', 'ones'] as const).map((place, i) => {
                 const digit = [hundreds, tens, ones][i]
                 return (
                   <div key={place} className="flex flex-col items-center">
                     <button
-                      className="w-8 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground text-[10px] leading-none"
+                      className="w-6 h-3.5 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground"
                       onClick={() => updateDigit(place, 1)}
-                    >▲</button>
-                    <span className="font-mono text-xl w-8 text-center text-foreground leading-tight select-none">
-                      {totalMinutes === 0 ? (i === 0 ? '∞' : ' ') : digit}
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <span className="font-mono text-sm w-6 text-center text-foreground leading-none select-none">
+                      {totalMinutes === 0 ? (i === 0 ? '∞' : '') : digit}
                     </span>
                     <button
-                      className="w-8 h-6 flex items-center justify-center text-muted-foreground hover:text-foreground text-[10px] leading-none"
+                      className="w-6 h-3.5 flex items-center justify-center text-muted-foreground hover:text-foreground active:text-foreground"
                       onClick={() => updateDigit(place, -1)}
-                    >▼</button>
+                    >
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
                   </div>
                 )
               })}
-              <span className="text-sm text-muted-foreground ml-1">分</span>
+              <span className="text-xs text-muted-foreground ml-1">分</span>
             </div>
           </div>
         </div>
