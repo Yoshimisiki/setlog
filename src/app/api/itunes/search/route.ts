@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   const rawUrl = req.url
   const q = req.nextUrl.searchParams.get('q') ?? new URL(req.url).searchParams.get('q')
   console.log(`[itunes/search] url=${rawUrl} q=${q}`)
-  if (!q?.trim()) return NextResponse.json({ results: [], debug: { url: rawUrl, q } })
+  if (!q?.trim()) return NextResponse.json({ results: [] })
 
   let allTracks: unknown[]
 
