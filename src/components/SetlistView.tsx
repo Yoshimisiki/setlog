@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ListMusic, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Square } from 'lucide-react'
-import { SiSpotify, SiApplemusic, SiYoutubemusic } from 'react-icons/si'
+import { SiSpotify, SiApplemusic, SiYoutubemusic, SiYoutube } from 'react-icons/si'
 import { formatSeconds, cn } from '@/lib/utils'
 import { saveCurrentSetlist } from '@/lib/storage'
 import { format } from 'date-fns'
@@ -165,6 +165,13 @@ export default function SetlistView({ setlist }: Props) {
                         className="text-red-400 hover:opacity-70 transition-opacity flex-shrink-0">
                         <SiYoutubemusic className="w-5 h-5" />
                       </a>
+                      {item.youtube_url && (
+                        <a href={item.youtube_url} target="_blank" rel="noopener noreferrer"
+                          title="YouTube で見る"
+                          className="text-red-500 hover:opacity-70 transition-opacity flex-shrink-0">
+                          <SiYoutube className="w-5 h-5" />
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

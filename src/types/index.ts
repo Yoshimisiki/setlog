@@ -9,6 +9,7 @@ export interface SetlistItem {
   deezer_id?: string
   preview_url?: string
   apple_music_url?: string
+  youtube_url?: string
   note?: string
 }
 

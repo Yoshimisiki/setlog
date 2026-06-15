@@ -77,6 +77,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [deezerId, setDeezerId]         = useState('')
   const [previewUrl, setPreviewUrl]     = useState('')
   const [appleMusicUrl, setAppleMusicUrl] = useState('')
+  const [youtubeUrl, setYoutubeUrl]     = useState('')
   const [manualOpen, setManualOpen]     = useState(false)
 
   // 検索状態
@@ -144,6 +145,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setDeezerId(editItem.deezer_id ?? '')
       setPreviewUrl(editItem.preview_url ?? '')
       setAppleMusicUrl(editItem.apple_music_url ?? '')
+      setYoutubeUrl(editItem.youtube_url ?? '')
       setManualOpen(true)
       if (editItem.deezer_id) {
         setSelectedTrack({
@@ -165,6 +167,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setDeezerId('')
       setPreviewUrl('')
       setAppleMusicUrl('')
+      setYoutubeUrl('')
       setSelectedTrack(null)
       setManualOpen(itemType === 'mc')
     }
@@ -351,6 +354,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       deezer_id: deezerId || undefined,
       preview_url: previewUrl || undefined,
       apple_music_url: appleMusicUrl || undefined,
+      youtube_url: youtubeUrl.trim() || undefined,
     })
     onClose()
   }
@@ -634,6 +638,18 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="3:45"
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono h-11 text-base"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">YouTube URL（任意）</Label>
+                  <Input
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
+                    autoCapitalize="none"
+                    autoCorrect="off"
                   />
                 </div>
 
