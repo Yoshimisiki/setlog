@@ -39,7 +39,6 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
-  const [targetEditing, setTargetEditing] = useState(false)
 
   useEffect(() => {
     if (initialized.current) return
@@ -211,30 +210,20 @@ export default function SetlistEditor({ initialSetlist }: Props) {
                 onClick={() => setField('target_seconds', targetSeconds > 60 ? targetSeconds - 60 : 0)}
                 className="h-8 w-8 flex-shrink-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors text-base"
               >−</button>
-              <span
-                className="flex-1 text-center text-sm text-foreground cursor-pointer select-none"
-                onClick={() => setTargetEditing(true)}
-              >
-                {targetEditing ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    inputMode="numeric"
-                    defaultValue={targetMinutes === 0 ? '' : String(targetMinutes)}
-                    onBlur={(e) => {
-                      const v = parseInt(e.target.value, 10)
-                      setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
-                      setTargetEditing(false)
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-                    className="w-full text-center text-sm bg-transparent text-foreground outline-none"
-                  />
-                ) : (
-                  <span className="text-muted-foreground">
-                    {targetMinutes === 0 ? '∞' : targetMinutes}
-                  </span>
-                )}
-              </span>
+              <input
+                key={targetSeconds}
+                type="text"
+                inputMode="numeric"
+                defaultValue={targetMinutes === 0 ? '' : String(targetMinutes)}
+                placeholder="∞"
+                onFocus={(e) => e.target.select()}
+                onBlur={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                className="flex-1 text-center text-sm bg-transparent text-foreground placeholder:text-muted-foreground outline-none min-w-0"
+              />
               <button
                 type="button"
                 onClick={() => setField('target_seconds', (targetMinutes + 1) * 60)}
