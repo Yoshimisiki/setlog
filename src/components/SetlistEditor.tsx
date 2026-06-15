@@ -39,24 +39,15 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
-
-  // 持ち時間（分）入力 - string管理でiOS Safariの空欄問題を回避
-  const [rawTargetMinutes, setRawTargetMinutes] = useState<string>('')
-  const [targetFocused, setTargetFocused] = useState(false)
-  const targetInputRef = useRef<HTMLInputElement>(null)
-
-  // setlist.target_secondsが変わったとき（ロード時など）にrawを同期
-  useEffect(() => {
-    if (targetFocused) return
-    const mins = setlist.target_seconds > 0 ? String(Math.floor(setlist.target_seconds / 60)) : ''
-    setRawTargetMinutes(mins)
-  }, [setlist.target_seconds, targetFocused])
+  // contentEditableのkey: ロード・リセット時にDOMを作り直す
+  const [contentKey, setContentKey] = useState(0)
 
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
     if (!initialSetlist) {
       setSetlist(loadCurrentSetlist())
+      setContentKey(k => k + 1)
     }
   }, [initialSetlist])
 
@@ -154,6 +145,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
             onClick={() => {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
               update(defaultSetlist())
+              setContentKey(k => k + 1)
               toast.success(t('editor.newSetlistSuccess'))
             }}
           >
@@ -216,24 +208,32 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <Input
-              ref={targetInputRef}
-              type="text"
+            <div
+              key={contentKey}
+              contentEditable
+              suppressContentEditableWarning
               inputMode="numeric"
-              value={rawTargetMinutes}
-              onChange={(e) => setRawTargetMinutes(e.target.value.replace(/\D/g, ''))}
-              onFocus={() => {
-                setTargetFocused(true)
-                setTimeout(() => targetInputRef.current?.select(), 0)
+              onInput={(e) => {
+                const val = e.currentTarget.textContent ?? ''
+                const num = parseInt(val, 10)
+                setField('target_seconds', isNaN(num) || num <= 0 ? 0 : num * 60)
               }}
-              onBlur={() => {
-                setTargetFocused(false)
-                const v = parseInt(rawTargetMinutes, 10)
-                setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
+              onFocus={(e) => {
+                const range = document.createRange()
+                range.selectNodeContents(e.currentTarget)
+                window.getSelection()?.removeAllRanges()
+                window.getSelection()?.addRange(range)
               }}
-              placeholder="∞"
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground h-8 text-sm"
-            />
+              onKeyDown={(e) => {
+                // 数字・バックスペース・Delete・矢印キーのみ許可
+                if (!/^\d$/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(e.key)) {
+                  e.preventDefault()
+                }
+              }}
+              className="target-minutes-ce bg-input border border-border text-foreground rounded-md h-8 text-sm px-3 flex items-center outline-none focus:ring-2 focus:ring-ring min-w-0"
+            >
+              {targetSeconds > 0 ? String(Math.floor(targetSeconds / 60)) : ''}
+            </div>
           </div>
         </div>
       </div>
