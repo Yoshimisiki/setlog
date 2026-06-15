@@ -322,6 +322,19 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setShowArtistIdInput(false)
   }
 
+  const handleYoutubeBlur = async (url: string) => {
+    if (!url.trim()) return
+    try {
+      const res = await fetch(`/api/youtube/info?url=${encodeURIComponent(url)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.title && !title.trim()) setTitle(data.title)
+      if (data.duration_seconds > 0 && !duration.trim()) {
+        setDuration(formatSeconds(data.duration_seconds))
+      }
+    } catch {}
+  }
+
   const clearSelectedTrack = () => {
     setSelectedTrack(null)
     setDeezerId('')
@@ -617,7 +630,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                   <Input
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    placeholder="3:45"
+                    placeholder="MM:SS"
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono h-11 text-base"
                   />
                 </div>
@@ -627,6 +640,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                   <Input
                     value={youtubeUrl}
                     onChange={(e) => setYoutubeUrl(e.target.value)}
+                    onBlur={(e) => handleYoutubeBlur(e.target.value)}
                     placeholder="https://youtube.com/watch?v=..."
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                     autoCapitalize="none"
