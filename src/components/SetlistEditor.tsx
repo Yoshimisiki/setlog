@@ -204,10 +204,11 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
             <Input
-              type="number" min={1} max={300}
+              type="text"
+              inputMode="numeric"
               value={targetMinutes || ''}
               onChange={(e) => {
-                const v = parseInt(e.target.value, 10)
+                const v = parseInt(e.target.value.replace(/\D/g, ''), 10)
                 setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
               }}
               placeholder="∞"
