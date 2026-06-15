@@ -210,7 +210,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               type="date"
               value={setlist.event_date ?? ''}
               onChange={(e) => setField('event_date', e.target.value)}
-              className="bg-input border-border text-foreground h-8 text-sm"
+              className="bg-input border-border text-foreground h-8 text-sm w-full appearance-none"
             />
           </div>
           <div className="space-y-1">
