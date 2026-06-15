@@ -11,7 +11,7 @@ import { parseMMSS, formatSeconds } from '@/lib/utils'
 import { searchTracks } from '@/lib/deezer'
 import { searchMusicBrainz } from '@/lib/musicbrainz'
 import { searchITunes, lookupITunesByArtistId, extractArtistId, type ITunesTrack } from '@/lib/itunes'
-import { Loader2, Music, X, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react'
+import { Loader2, Music, X, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { useTranslations } from 'next-intl'
@@ -78,7 +78,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [previewUrl, setPreviewUrl]     = useState('')
   const [appleMusicUrl, setAppleMusicUrl] = useState('')
   const [youtubeUrl, setYoutubeUrl]     = useState('')
-  const [manualOpen, setManualOpen]     = useState(false)
 
   // 検索状態
   const [searchInput, setSearchInput]         = useState('')
@@ -146,7 +145,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setPreviewUrl(editItem.preview_url ?? '')
       setAppleMusicUrl(editItem.apple_music_url ?? '')
       setYoutubeUrl(editItem.youtube_url ?? '')
-      setManualOpen(true)
       if (editItem.deezer_id) {
         setSelectedTrack({
           source: 'deezer',
@@ -169,7 +167,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setAppleMusicUrl('')
       setYoutubeUrl('')
       setSelectedTrack(null)
-      setManualOpen(itemType === 'mc')
     }
     setSearchInput('')
     setDropdown([])
@@ -245,7 +242,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setDropdown([])
       setDropdownOpen(false)
       setShowArtistIdInput(true)
-      setManualOpen(true)
     } finally {
       setSearching(false)
     }
@@ -304,8 +300,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
     setTitle(result.title)
     setArtist(result.artist)
     setDuration(result.duration_seconds > 0 ? formatSeconds(result.duration_seconds) : '')
-    setManualOpen(true)
-
     if (result.source === 'deezer') {
       setDeezerId(result.id)
       setPreviewUrl(result.preview_url ?? '')
@@ -337,7 +331,6 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
 
   const handleSave = () => {
     if (!title.trim()) {
-      setManualOpen(true)
       toast.error(t('titleRequired'))
       return
     }
@@ -585,21 +578,9 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
             </div>
           )}
 
-          {/* Manual input (collapsible) */}
+          {/* Manual input */}
           <div>
-            <button
-              type="button"
-              onClick={() => setManualOpen((v) => !v)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full min-h-[44px]"
-            >
-              {manualOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {showSearch
-                ? (selectedTrack ? t('editDetails') : t('noResultManual'))
-                : t('titleLabel')}
-            </button>
-
-            {manualOpen && (
-              <div className="mt-3 space-y-2.5 pl-1 border-l-2 border-border">
+            <div className="space-y-2.5 pl-1 border-l-2 border-border">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">
                     {showSearch ? t('songTitle') : t('titleLabel')}
@@ -662,8 +643,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base"
                   />
                 </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* ③ ボタン 44px */}
