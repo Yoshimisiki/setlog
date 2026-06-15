@@ -40,6 +40,18 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
 
+  // 持ち時間（分）入力 - string管理でiOS Safariの空欄問題を回避
+  const [rawTargetMinutes, setRawTargetMinutes] = useState<string>('')
+  const [targetFocused, setTargetFocused] = useState(false)
+  const targetInputRef = useRef<HTMLInputElement>(null)
+
+  // setlist.target_secondsが変わったとき（ロード時など）にrawを同期
+  useEffect(() => {
+    if (targetFocused) return
+    const mins = setlist.target_seconds > 0 ? String(Math.floor(setlist.target_seconds / 60)) : ''
+    setRawTargetMinutes(mins)
+  }, [setlist.target_seconds, targetFocused])
+
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
@@ -125,6 +137,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const progressColor = { under: 'bg-green-500',  near: 'bg-yellow-500',  over: 'bg-red-500'   }[status]
 
   const targetMinutes = targetSeconds > 0 ? Math.floor(targetSeconds / 60) : 0
+  // ↑ 表示用のみ（プログレス "/ 45:00" など）。入力欄はrawTargetMinutesで管理
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
@@ -204,11 +217,18 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
             <Input
+              ref={targetInputRef}
               type="text"
               inputMode="numeric"
-              value={targetMinutes || ''}
-              onChange={(e) => {
-                const v = parseInt(e.target.value.replace(/\D/g, ''), 10)
+              value={rawTargetMinutes}
+              onChange={(e) => setRawTargetMinutes(e.target.value.replace(/\D/g, ''))}
+              onFocus={() => {
+                setTargetFocused(true)
+                setTimeout(() => targetInputRef.current?.select(), 0)
+              }}
+              onBlur={() => {
+                setTargetFocused(false)
+                const v = parseInt(rawTargetMinutes, 10)
                 setField('target_seconds', isNaN(v) || v <= 0 ? 0 : v * 60)
               }}
               placeholder="∞"
