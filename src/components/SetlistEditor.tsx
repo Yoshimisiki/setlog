@@ -221,7 +221,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               ref={targetInputRef}
               type="tel"
               placeholder="∞"
-              onFocus={() => { isFocused.current = true }}
+              onFocus={(e) => { isFocused.current = true; e.target.select() }}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '')
                 e.target.value = raw
