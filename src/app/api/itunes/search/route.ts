@@ -45,15 +45,7 @@ async function lookupByArtistId(artistId: string): Promise<unknown[]> {
 }
 
 export async function GET(req: NextRequest) {
-  const q        = req.nextUrl.searchParams.get('q')
-  const artistId = req.nextUrl.searchParams.get('artistId')
-
-  // Direct artistId lookup (from UI input)
-  if (artistId?.trim()) {
-    const tracks = await lookupByArtistId(artistId.trim())
-    return NextResponse.json({ results: dedup(tracks) })
-  }
-
+  const q = req.nextUrl.searchParams.get('q')
   if (!q?.trim()) return NextResponse.json({ results: [] })
 
   let allTracks: unknown[]
@@ -62,11 +54,9 @@ export async function GET(req: NextRequest) {
     const hiragana = katakanaToHiragana(q)
     const terms = hiragana !== q ? [q, hiragana] : [q]
 
-    // ① + ② parallel search
     const searchResults = await Promise.all(terms.map(searchByTerm))
     const merged = dedup(searchResults.flat())
 
-    // ③ artistId lookup for the most frequent artistId in results
     const artistIdCounts = new Map<number, number>()
     for (const t of merged) {
       const aid = (t as { artistId?: number }).artistId

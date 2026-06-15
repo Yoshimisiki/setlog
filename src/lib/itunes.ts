@@ -9,14 +9,14 @@ export interface ITunesTrack {
 }
 
 export async function searchITunes(query: string): Promise<ITunesTrack[]> {
-  const res = await fetch(`/api/itunes?q=${encodeURIComponent(query)}`)
+  const res = await fetch(`/api/itunes/search?q=${encodeURIComponent(query)}`)
   if (!res.ok) return []
   const data = await res.json()
   return (data.results ?? []) as ITunesTrack[]
 }
 
 export async function lookupITunesByArtistId(artistId: string): Promise<ITunesTrack[]> {
-  const res = await fetch(`/api/itunes?artistId=${encodeURIComponent(artistId)}`)
+  const res = await fetch(`/api/itunes/lookup?id=${encodeURIComponent(artistId)}`)
   if (!res.ok) return []
   const data = await res.json()
   return (data.results ?? []) as ITunesTrack[]
