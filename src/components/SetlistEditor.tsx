@@ -41,14 +41,20 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
-  const targetInputRef = useRef<HTMLInputElement>(null)
-  const isFocused = useRef(false)
+
+  // setlistと独立したstate。useEffect([setlist.target_seconds])で同期しないことがポイント。
+  // 同期するのはロード時・新規作成時だけ。これによりキー入力ごとのリセットが起きない。
+  const tsToStr = (ts: number) =>
+    ts > 0 && ts < INFINITE ? String(Math.round(ts / 60)) : ''
+  const [targetStr, setTargetStr] = useState(() => tsToStr(setlist.target_seconds))
 
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
     if (!initialSetlist) {
-      setSetlist(loadCurrentSetlist())
+      const loaded = loadCurrentSetlist()
+      setSetlist(loaded)
+      setTargetStr(tsToStr(loaded.target_seconds ?? 0))
     }
   }, [initialSetlist])
 
@@ -145,7 +151,9 @@ export default function SetlistEditor({ initialSetlist }: Props) {
             className="text-muted-foreground hover:text-foreground text-xs gap-1"
             onClick={() => {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
-              update(defaultSetlist())
+              const def = defaultSetlist()
+              update(def)
+              setTargetStr(tsToStr(def.target_seconds ?? 0))
               toast.success(t('editor.newSetlistSuccess'))
             }}
           >
@@ -209,19 +217,18 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
             <input
-              ref={targetInputRef}
               type="tel"
+              value={targetStr}
               placeholder="∞"
-              onFocus={() => { isFocused.current = true }}
-              onChange={(e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '')
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setTargetStr(e.target.value.replace(/[^0-9]/g, ''))}
+              onBlur={() => {
+                const num = parseInt(targetStr, 10)
+                const secs = isNaN(num) || num === 0 ? INFINITE : num * 60
+                setField('target_seconds', secs)
+                setTargetStr(num > 0 ? String(num) : '')
               }}
-              onBlur={(e) => {
-                isFocused.current = false
-                const num = parseInt(e.target.value, 10)
-                setField('target_seconds', isNaN(num) || num === 0 ? INFINITE : num * 60)
-                e.target.value = isNaN(num) || num === 0 ? '' : String(num)
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
               className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
             />
           </div>
