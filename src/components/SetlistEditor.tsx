@@ -25,6 +25,8 @@ import AddItemModal from './AddItemModal'
 import ShareModal from './ShareModal'
 import AppFooter from './AppFooter'
 
+const INFINITE = 999999 * 60
+
 interface Props {
   initialSetlist?: Setlist
 }
@@ -39,9 +41,18 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
-  const [targetInput, setTargetInput] = useState(
-    setlist.target_seconds > 0 ? String(Math.round(setlist.target_seconds / 60)) : ''
-  )
+  const targetInputRef = useRef<HTMLInputElement>(null)
+
+  // target_secondsが外から変わったときにinputのDOM値を同期
+  useEffect(() => {
+    const el = targetInputRef.current
+    if (!el) return
+    if (setlist.target_seconds === 0 || setlist.target_seconds >= INFINITE) {
+      el.value = ''
+    } else {
+      el.value = String(Math.round(setlist.target_seconds / 60))
+    }
+  }, [setlist.target_seconds])
 
   useEffect(() => {
     if (initialized.current) return
@@ -119,7 +130,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   const hasInfiniteItems = setlist.items.some(i => i.duration_seconds === 0)
   const totalSeconds = setlist.items.reduce((s, i) => s + i.duration_seconds, 0)
   const targetSeconds = setlist.target_seconds ?? 0
-  const hasNoTarget = targetSeconds === 0
+  const hasNoTarget = targetSeconds === 0 || targetSeconds >= INFINITE
   const showProgress = !hasNoTarget && !hasInfiniteItems
   const progressPct = showProgress ? Math.min((totalSeconds / targetSeconds) * 100, 100) : 0
   const status = showProgress ? getTimingStatus(totalSeconds, targetSeconds) : 'under'
@@ -208,14 +219,14 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
             <input
+              ref={targetInputRef}
               type="tel"
-              value={targetInput}
               placeholder="∞"
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '')
-                setTargetInput(raw)
-                const num = parseInt(raw)
-                setField('target_seconds', isNaN(num) || num === 0 ? 0 : num * 60)
+                e.target.value = raw
+                const num = parseInt(raw, 10)
+                setField('target_seconds', isNaN(num) || num === 0 ? INFINITE : num * 60)
               }}
               className="bg-input border border-border text-foreground placeholder:text-muted-foreground rounded-md h-8 text-sm px-3 w-20"
             />
