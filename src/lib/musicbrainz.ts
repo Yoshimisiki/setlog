@@ -6,7 +6,9 @@ export interface MusicBrainzTrack {
 }
 
 export async function searchMusicBrainz(query: string): Promise<MusicBrainzTrack[]> {
-  const res = await fetch(`/api/musicbrainz?q=${encodeURIComponent(query)}`)
+  const res = await fetch(`/api/musicbrainz?q=${encodeURIComponent(query)}`, {
+    signal: AbortSignal.timeout(5000),
+  })
   if (!res.ok) return []
   const data = await res.json()
   const recordings: Array<Record<string, unknown>> = data.recordings ?? []
