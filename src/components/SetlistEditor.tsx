@@ -210,7 +210,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
               type="date"
               value={setlist.event_date ?? ''}
               onChange={(e) => setField('event_date', e.target.value)}
-              className="bg-input border-border text-foreground h-8 text-sm w-full appearance-none"
+              className="bg-input border-border text-foreground h-8 text-sm w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
             />
           </div>
           <div className="space-y-1">
@@ -224,7 +224,7 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t('editor.targetTime')}</Label>
-            <div className="bg-input border border-border rounded-md h-8 px-2 flex items-center gap-0.5">
+            <div className="bg-input border border-border rounded-md h-8 px-2 flex items-center justify-center gap-0.5">
               {(['hundreds', 'tens', 'ones'] as const).map((place, i) => {
                 const digit = [hundreds, tens, ones][i]
                 return (
