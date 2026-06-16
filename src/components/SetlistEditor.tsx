@@ -275,8 +275,8 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         </Link>
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost" size="sm"
-            className="text-muted-foreground hover:text-foreground text-xs gap-1"
+            variant="outline" size="sm"
+            className="border-border bg-secondary/40 text-foreground hover:bg-secondary hover:border-primary text-xs gap-1"
             onClick={() => {
               if (setlist.items.length > 0 && !window.confirm(t('editor.newSetlistConfirm'))) return
               const def = defaultSetlist()
@@ -289,8 +289,8 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           </Button>
           {setlist.band_name.trim() && bandNameToSlug(setlist.band_name) && (
             <Button
-              variant="ghost" size="sm"
-              className="text-muted-foreground hover:text-foreground text-xs gap-1"
+              variant="outline" size="sm"
+              className="border-border bg-secondary/40 text-foreground hover:bg-secondary hover:border-primary text-xs gap-1"
               onClick={() => { setSlugCopied(false); setSlugModalOpen(true) }}
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -299,7 +299,7 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           )}
           <Button
             size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => setShareOpen(true)}
             disabled={setlist.items.length === 0}
           >
@@ -311,12 +311,31 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
 
       {/* Metadata */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-        <Input
-          value={setlist.band_name}
-          onChange={(e) => setField('band_name', e.target.value)}
-          placeholder={t('editor.bandNamePlaceholder')}
-          className="bg-transparent border-0 border-b border-border rounded-none font-semibold text-lg text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:border-primary px-0"
-        />
+        {/* 3ステップ案内 */}
+        <div className="rounded-lg border border-border bg-secondary/40 p-3 space-y-2">
+          <p className="text-xs font-medium text-foreground">{t('editor.autoGenerateFlowTitle')}</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {([1, 2, 3] as const).map((n) => (
+              <div key={n} className="flex items-start gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold">{n}</span>
+                <span className="text-xs text-muted-foreground">{t(`editor.autoGenerateStep${n}` as Parameters<typeof t>[0])}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* バンド名 */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-foreground">{t('editor.bandNameLabel')}</Label>
+          <Input
+            value={setlist.band_name}
+            onChange={(e) => setField('band_name', e.target.value)}
+            placeholder={t('editor.bandNamePlaceholder')}
+            className="bg-input border-border text-foreground placeholder:text-muted-foreground h-11 text-base font-semibold focus-visible:ring-2 focus-visible:ring-primary"
+          />
+          <p className="text-xs text-muted-foreground">{t('editor.bandNameHelp')}</p>
+        </div>
+
         <Input
           value={setlist.title}
           onChange={(e) => setField('title', e.target.value)}
@@ -385,12 +404,11 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         </p>
         <Button
           size="sm"
-          variant="outline"
-          className="w-full border-dashed text-muted-foreground hover:text-foreground hover:bg-secondary"
+          className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={autoGenerate}
           disabled={isGenerating || !setlist.band_name.trim() || setlist.target_seconds <= 0}
         >
-          <Wand2 className="w-4 h-4 mr-1.5" />
+          <Wand2 className="w-4 h-4" />
           {isGenerating ? t('editor.autoGenerating') : t('editor.autoGenerate')}
         </Button>
         {!setlist.band_name.trim() && (
@@ -454,20 +472,20 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         </DndContext>
 
         <div className="border-t border-border p-3 flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+          <Button size="sm" variant="outline"
+            className="border-border bg-secondary/50 text-foreground hover:bg-secondary hover:border-primary"
             onClick={() => openAdd('song')}
           >
             <Plus className="w-4 h-4 mr-1" />{t('editor.addSong')}
           </Button>
-          <Button size="sm" variant="ghost"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+          <Button size="sm" variant="outline"
+            className="border-border bg-secondary/50 text-foreground hover:bg-secondary hover:border-primary"
             onClick={() => openAdd('mc')}
           >
             <Mic2 className="w-4 h-4 mr-1" />{t('editor.addMC')}
           </Button>
-          <Button size="sm" variant="ghost"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+          <Button size="sm" variant="outline"
+            className="border-border bg-secondary/50 text-foreground hover:bg-secondary hover:border-primary"
             onClick={() => openAdd('se')}
           >
             <Radio className="w-4 h-4 mr-1" />{t('editor.addSE')}
