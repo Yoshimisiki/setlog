@@ -2,6 +2,7 @@ export interface ITunesTrack {
   trackId: number
   trackName: string
   artistName: string
+  artistId?: number
   trackTimeMillis?: number
   previewUrl?: string
   trackViewUrl?: string
