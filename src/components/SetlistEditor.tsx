@@ -312,13 +312,13 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
       {/* Metadata */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         {/* 3ステップ案内 */}
-        <div className="rounded-lg border border-border bg-secondary/40 p-3 space-y-2">
-          <p className="text-xs font-medium text-foreground">{t('editor.autoGenerateFlowTitle')}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
+          <p className="text-sm font-medium text-foreground">{t('editor.autoGenerateFlowTitle')}</p>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
             {([1, 2, 3] as const).map((n) => (
-              <div key={n} className="flex items-start gap-2">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold">{n}</span>
-                <span className="text-xs text-muted-foreground">{t(`editor.autoGenerateStep${n}` as Parameters<typeof t>[0])}</span>
+              <div key={n} className="min-w-0 flex items-center gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold leading-none">{n}</span>
+                <span className="min-w-0 text-sm text-muted-foreground leading-tight">{t(`editor.autoGenerateStep${n}` as Parameters<typeof t>[0])}</span>
               </div>
             ))}
           </div>
