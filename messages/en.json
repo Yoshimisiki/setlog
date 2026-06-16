@@ -10,7 +10,7 @@
     "newSetlistConfirm": "Clear current setlist and create a new one?",
     "newSetlistSuccess": "New setlist created",
     "publishUrl": "Share URL",
-    "bandNamePlaceholder": "Band / Artist Name",
+    "bandNamePlaceholder": "Band / Artist Name used for auto-generation",
     "titlePlaceholder": "Title (e.g. 2024/12/14 Shibuya CLUB QUATTRO)",
     "venueName": "Venue",
     "eventDate": "Date",
@@ -30,7 +30,9 @@
     "autoGenerating": "Generating...",
     "autoGenerateConfirm": "Replace current setlist with auto-generated songs?",
     "autoGenerateNotFound": "Band not found. Please add songs manually.",
-    "autoGenerateSuccess": "{count} songs generated"
+    "autoGenerateSuccess": "{count} songs generated",
+    "autoGenerateHint": "Uses the band / artist name above to find tracks from Apple Music / iTunes and build a setlist within the target time.",
+    "autoGenerateNeedsBand": "Enter a band / artist name first to auto-generate a setlist."
   },
   "addItem": {
     "addSong": "Add Song",

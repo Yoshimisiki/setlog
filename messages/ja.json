@@ -10,7 +10,7 @@
     "newSetlistConfirm": "現在のセトリをクリアして新規作成しますか？",
     "newSetlistSuccess": "新しいセトリを作成しました",
     "publishUrl": "公開URLを生成",
-    "bandNamePlaceholder": "バンド名 / アーティスト名",
+    "bandNamePlaceholder": "バンド名 / アーティスト名（自動生成の検索に使います）",
     "titlePlaceholder": "タイトル (例: 2024/12/14 渋谷CLUB QUATTRO)",
     "venueName": "会場名",
     "eventDate": "開催日",
@@ -30,7 +30,9 @@
     "autoGenerating": "生成中...",
     "autoGenerateConfirm": "現在の曲リストを削除して自動生成しますか？",
     "autoGenerateNotFound": "バンド名が見つかりませんでした。手動で曲を追加してください",
-    "autoGenerateSuccess": "{count}曲を自動生成しました"
+    "autoGenerateSuccess": "{count}曲を自動生成しました",
+    "autoGenerateHint": "上のバンド名をもとに、Apple Music / iTunes から曲を探して持ち時間内で自動選曲します。",
+    "autoGenerateNeedsBand": "自動生成するには、まずバンド名 / アーティスト名を入力してください。"
   },
   "addItem": {
     "addSong": "曲を追加",
