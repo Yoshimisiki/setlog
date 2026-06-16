@@ -29,6 +29,20 @@ import AppFooter from './AppFooter'
 
 const INFINITE = 999999 * 60
 
+const VERSION_PATTERN = /live|remaster|remastered|version|edit|mix|mono|stereo|demo|acoustic|instrumental|karaoke|feat|featuring|remix|radio|single|album|deluxe|bonus|alternate|take|session|再録|ライブ|リマスター|バージョン|ミックス|デモ|アコースティック|インスト|カラオケ|リミックス/i
+
+function normalizeSongTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize('NFKC')
+    .replace(/\s*[\(\[【「『][^\)\]】」』]*(live|remaster|remastered|version|edit|mix|mono|stereo|demo|acoustic|instrumental|karaoke|feat|featuring|remix|radio|single|album|deluxe|bonus|alternate|take|session|再録|ライブ|リマスター|バージョン|ミックス|デモ|アコースティック|インスト|カラオケ|リミックス)[^\)\]】」』]*[\)\]】」』]/gi, '')
+    .replace(/\s*[-–—／/]\s*(.*)/gi, (_, after) => VERSION_PATTERN.test(after) ? '' : ` - ${after}`)
+    .replace(/\s+(feat\.?|featuring|ft\.?)\s+.*$/i, '')
+    .replace(/[「」『』""]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function bandNameToSlug(name: string): string {
   const trimmed = name.trim()
   if (!trimmed) return ''
@@ -156,11 +170,12 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         return
       }
 
-      // 既存曲との重複を避けるキーセット
-      const existingKeys = new Set(
+      // 既存曲との重複を避けるキーセット（正規化済み曲名で比較）
+      const existingTitleKeys = new Set(
         setlist.items
           .filter(item => item.type === 'song')
-          .map(item => `${item.artist ?? ''}::${item.title}`.toLowerCase())
+          .map(item => normalizeSongTitle(item.title))
+          .filter(Boolean)
       )
 
       // Fisher-Yates shuffle
@@ -174,10 +189,12 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
       const newItems: SetlistItem[] = []
 
       for (const track of shuffled) {
+        const normalizedTitle = normalizeSongTitle(track.trackName)
+        if (!normalizedTitle) continue
+        if (existingTitleKeys.has(normalizedTitle)) continue
         const dur = Math.round((track.trackTimeMillis ?? 0) / 1000)
+        if (!dur || dur <= 0) continue
         if (!isInfinite && accumulated + dur > remainingSeconds) continue
-        const key = `${track.artistName ?? ''}::${track.trackName}`.toLowerCase()
-        if (existingKeys.has(key)) continue
         newItems.push({
           id: nanoid(),
           type: 'song',
@@ -187,7 +204,7 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           preview_url: track.previewUrl,
           apple_music_url: track.trackViewUrl,
         })
-        existingKeys.add(key)
+        existingTitleKeys.add(normalizedTitle)
         accumulated += dur
       }
 
