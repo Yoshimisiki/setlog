@@ -122,12 +122,13 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         searchTracks.find((t) => t.artistName.toLowerCase().includes(bandLower)) ??
         searchTracks[0]
 
-      if (!matched?.artistId) {
+      const artistId = matched?.artistId
+      if (!matched || !artistId) {
         toast.error(t('editor.autoGenerateNotFound'))
         return
       }
 
-      const lookupRes = await fetch(`/api/itunes/lookup?id=${matched.artistId}`)
+      const lookupRes = await fetch(`/api/itunes/lookup?id=${artistId}`)
       if (!lookupRes.ok) throw new Error('lookup failed')
       const lookupData = await lookupRes.json()
       const allTracks = (lookupData.results ?? []) as ITunesTrack[]
