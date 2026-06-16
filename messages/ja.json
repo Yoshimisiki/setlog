@@ -40,7 +40,8 @@
     "autoGenerateHint": "手動で追加した MC / SE を残して、残り時間の曲をランダムに入れ替えます。",
     "autoGenerateNeedsBand": "自動生成するには、まずバンド名 / アーティスト名を入力してください。",
     "autoGenerateInfiniteExisting": "時間未設定の項目があるため自動生成できません。先にMC/SE/曲の時間を設定してください。",
-    "autoGenerateNoRemainingTime": "残り時間がないため、自動生成できません。持ち時間を増やすか、既存項目を短くしてください。"
+    "autoGenerateNoRemainingTime": "残り時間がないため、自動生成できません。持ち時間を増やすか、既存項目を短くしてください。",
+    "autoGenerateNoFittingSongs": "残り時間に入る曲が見つかりませんでした。持ち時間を増やすか、MC/SEを短くしてください。"
   },
   "addItem": {
     "addSong": "曲を追加",

@@ -40,7 +40,8 @@
     "autoGenerateHint": "Keeps manually added MC / SE items and randomizes songs for the remaining time.",
     "autoGenerateNeedsBand": "Enter a band / artist name first to auto-generate a setlist.",
     "autoGenerateInfiniteExisting": "Cannot auto-generate because some existing items have no duration. Please set durations first.",
-    "autoGenerateNoRemainingTime": "No remaining time to auto-generate songs. Increase the target time or shorten existing items."
+    "autoGenerateNoRemainingTime": "No remaining time to auto-generate songs. Increase the target time or shorten existing items.",
+    "autoGenerateNoFittingSongs": "No songs fit the remaining time. Increase the target time or shorten MC/SE items."
   },
   "addItem": {
     "addSong": "Add Song",

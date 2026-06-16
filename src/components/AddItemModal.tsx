@@ -370,6 +370,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       preview_url: previewUrl || undefined,
       apple_music_url: appleMusicUrl || undefined,
       youtube_id: extractVideoId(youtubeUrl.trim()) || undefined,
+      source: selectedTrack?.source ?? 'manual',
     })
     onClose()
   }
