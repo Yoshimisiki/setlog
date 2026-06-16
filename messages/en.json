@@ -25,7 +25,12 @@
     "addSE": "Add SE",
     "emptyList": "Add songs, MC, or SE using the buttons below",
     "updatedSuccess": "Updated",
-    "addedSuccess": "Added"
+    "addedSuccess": "Added",
+    "autoGenerate": "Auto-generate Setlist",
+    "autoGenerating": "Generating...",
+    "autoGenerateConfirm": "Replace current setlist with auto-generated songs?",
+    "autoGenerateNotFound": "Band not found. Please add songs manually.",
+    "autoGenerateSuccess": "{count} songs generated"
   },
   "addItem": {
     "addSong": "Add Song",

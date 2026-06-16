@@ -17,6 +17,8 @@
 ステータス: 公開済み v2.6
 
 ## 次TODO
+- [ ] 【デバッグ中】画像カスタマイザーのロゴリサイズハンドルが動作しない（原因調査中）
+- [ ] 【未確認】セトリ自動生成ボタンが画面に表示されない不具合の確認
 - [ ] youtube_url → youtube_id へのデータ移行（URLハッシュ短縮）
 - [ ] Google AdSense 申請・審査通過・組み込み
 - [ ] バンドマンへのテスト使用・フィードバック収集
@@ -226,6 +228,7 @@ GET https://api.song.link/v1-alpha.1/links?isrc={isrc}&userCountry=JP
 - 合計時間をリアルタイム計算・持ち時間との差分を色で表示
 - localStorageに自動保存
 - 「自動生成」ボタン：バンド名でiTunes検索 → artistId取得 → 全曲ルックアップ → 持ち時間内でシャッフル選曲
+  【未確認】コード実装・型チェック済みだが画面に表示されない不具合報告あり（原因調査中）
 - 「専用URL発行」ボタン：バンド名をslug化して `/b/{slug}` URLを生成・コピー
 
 ### 5-4. 曲追加モーダル ✅ 実装済み
@@ -266,11 +269,11 @@ GET https://api.song.link/v1-alpha.1/links?isrc={isrc}&userCountry=JP
    - 右下にQRコード（公開URL）を埋め込む
    - 右下隅に著作権表示
 
-### 5-5b. 画像カスタマイザー（ImageCustomizerModal）✅ 実装済み
+### 5-5b. 画像カスタマイザー（ImageCustomizerModal）🔧 デバッグ中
 
 カスタマイズ可能な1080×1080px正方形画像をCanvasで生成。設定はlocalStorageに保存・次回引き継ぎ。
 
-**背景タブ**
+**背景タブ** ✅ 実装済み
 - 背景色（カラーピッカー + HEX直入力）
 - 背景画像アップロード（PNG/JPG・最大5MB）
 - 表示モード: contain（縦横比保持）+ スケール（0.1〜3.0倍）+ XYオフセット
@@ -282,19 +285,17 @@ GET https://api.song.link/v1-alpha.1/links?isrc={isrc}&userCountry=JP
   offsetY = (CS - drawH) / 2 + bgOffsetY
   ```
 
-**テキストタブ**
+**テキストタブ** ✅ 実装済み
 - テキスト色（カラーピッカー + HEX直入力）
 - フォント選択（Geist / Noto Sans JP / Shippori Mincho / M PLUS Rounded 1c / Zen Kaku Gothic New）
 
-**ロゴ・QR配置タブ**
-- ロゴ画像アップロード（PNG推奨・最大3MB）
-- ロゴ描画: 縦横比保持（logoDrawW=logoSize, logoDrawH=logoSize/aspect）
-- プレビュー上でドラッグしてロゴ・QR・テキストブロックを配置
-- ロゴリサイズ: Canvasの上に重ねた透明overlay divの右下ハンドルをPointerEventでドラッグ
-  - ハンドルはロゴ移動divの**子要素**として配置（兄弟要素にするとzIndex競合）
-  - `onPointerDown` + `window.addEventListener('pointermove'/'pointerup')` でマウス・タッチ両対応
-  - canvas座標 ↔ display座標の変換: `sc = containerRef.offsetWidth / 1080`
-- overflow:hiddenなし（ハンドルがクリップされないよう）
+**ロゴ・QR配置タブ** 🔧 リサイズ機能が動作せずデバッグ中
+- ロゴ画像アップロード（PNG推奨・最大3MB）：実装済み
+- ロゴ描画（縦横比保持）：実装済み
+- プレビュー上でドラッグしてロゴ・QR・テキストブロックを配置：実装済み
+- 【未解決】ロゴリサイズ：右下ハンドルが複数回の修正後も実際の動作確認が取れていない
+  - ハンドルをロゴ移動divの子要素として配置し直す等の修正を実施したが、ブラウザでのドラッグ動作が確認できていない
+  - 次回はpreviewツールでDOM・イベントリスナーの発火を直接確認してから判断する
 
 ### 5-6. YouTube URL自動取得 ✅ 実装済み
 

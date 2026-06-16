@@ -25,7 +25,12 @@
     "addSE": "SEを追加",
     "emptyList": "下のボタンから曲やMCを追加してください",
     "updatedSuccess": "更新しました",
-    "addedSuccess": "追加しました"
+    "addedSuccess": "追加しました",
+    "autoGenerate": "セトリを自動生成",
+    "autoGenerating": "生成中...",
+    "autoGenerateConfirm": "現在の曲リストを削除して自動生成しますか？",
+    "autoGenerateNotFound": "バンド名が見つかりませんでした。手動で曲を追加してください",
+    "autoGenerateSuccess": "{count}曲を自動生成しました"
   },
   "addItem": {
     "addSong": "曲を追加",
