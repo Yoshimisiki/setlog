@@ -104,7 +104,7 @@ export default function SortableItem({ item, index, onEdit, onDelete, playingId,
       )}
 
       <span className="text-muted-foreground text-xs font-mono flex-shrink-0 w-10 text-right">
-        {item.duration_seconds > 0 ? formatSeconds(item.duration_seconds) : '∞'}
+        {formatSeconds(item.duration_seconds)}
       </span>
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
