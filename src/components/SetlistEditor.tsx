@@ -263,6 +263,15 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
             <FilePlus className="w-3.5 h-3.5" />
             {t('editor.newSetlist')}
           </Button>
+          <Button
+            variant="outline" size="sm"
+            className="text-xs gap-1"
+            onClick={autoGenerate}
+            disabled={isGenerating || !setlist.band_name.trim() || setlist.target_seconds <= 0}
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            {isGenerating ? t('editor.autoGenerating') : t('editor.autoGenerate')}
+          </Button>
           {setlist.band_name.trim() && bandNameToSlug(setlist.band_name) && (
             <Button
               variant="ghost" size="sm"
@@ -287,6 +296,9 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
 
       {/* Metadata */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <div className="text-[10px] text-yellow-400 font-mono">
+          debug: band=&quot;{setlist.band_name}&quot; target={setlist.target_seconds} items={setlist.items.length}
+        </div>
         <Input
           value={setlist.band_name}
           onChange={(e) => setField('band_name', e.target.value)}
