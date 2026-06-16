@@ -28,11 +28,13 @@
     "addedSuccess": "追加しました",
     "autoGenerate": "セトリを自動生成",
     "autoGenerating": "生成中...",
-    "autoGenerateConfirm": "現在の曲リストを削除して自動生成しますか？",
+    "autoGenerateConfirm": "既存のMC/SE/曲を残したまま、残り時間に曲を追加します。よろしいですか？",
     "autoGenerateNotFound": "バンド名が見つかりませんでした。手動で曲を追加してください",
-    "autoGenerateSuccess": "{count}曲を自動生成しました",
-    "autoGenerateHint": "上のバンド名をもとに、Apple Music / iTunes から曲を探して持ち時間内で自動選曲します。",
-    "autoGenerateNeedsBand": "自動生成するには、まずバンド名 / アーティスト名を入力してください。"
+    "autoGenerateSuccess": "{count}曲を追加しました",
+    "autoGenerateHint": "上のバンド名をもとに、Apple Music / iTunes から曲を探し、既存のMC/SEを残したまま残り時間に自動追加します。",
+    "autoGenerateNeedsBand": "自動生成するには、まずバンド名 / アーティスト名を入力してください。",
+    "autoGenerateInfiniteExisting": "時間未設定の項目があるため自動生成できません。先にMC/SE/曲の時間を設定してください。",
+    "autoGenerateNoRemainingTime": "残り時間がないため、自動生成できません。持ち時間を増やすか、既存項目を短くしてください。"
   },
   "addItem": {
     "addSong": "曲を追加",

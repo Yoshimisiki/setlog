@@ -112,6 +112,21 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
   const autoGenerate = async () => {
     if (setlist.items.length > 0 && !window.confirm(t('editor.autoGenerateConfirm'))) return
 
+    // duration_seconds === 0 の項目があると残り時間が計算できない
+    if (setlist.items.some(item => item.duration_seconds === 0)) {
+      toast.error(t('editor.autoGenerateInfiniteExisting'))
+      return
+    }
+
+    const isInfinite = setlist.target_seconds >= INFINITE
+    const existingSeconds = setlist.items.reduce((sum, item) => sum + item.duration_seconds, 0)
+    const remainingSeconds = isInfinite ? INFINITE : Math.max(0, setlist.target_seconds - existingSeconds)
+
+    if (!isInfinite && remainingSeconds <= 0) {
+      toast.error(t('editor.autoGenerateNoRemainingTime'))
+      return
+    }
+
     setIsGenerating(true)
     try {
       const searchRes = await fetch(`/api/itunes/search?q=${encodeURIComponent(setlist.band_name)}`)
@@ -141,6 +156,13 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         return
       }
 
+      // 既存曲との重複を避けるキーセット
+      const existingKeys = new Set(
+        setlist.items
+          .filter(item => item.type === 'song')
+          .map(item => `${item.artist ?? ''}::${item.title}`.toLowerCase())
+      )
+
       // Fisher-Yates shuffle
       const shuffled = [...allTracks]
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -148,13 +170,14 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
 
-      const isInfinite = setlist.target_seconds >= INFINITE
       let accumulated = 0
       const newItems: SetlistItem[] = []
 
       for (const track of shuffled) {
         const dur = Math.round((track.trackTimeMillis ?? 0) / 1000)
-        if (!isInfinite && accumulated + dur > setlist.target_seconds) break
+        if (!isInfinite && accumulated + dur > remainingSeconds) continue
+        const key = `${track.artistName ?? ''}::${track.trackName}`.toLowerCase()
+        if (existingKeys.has(key)) continue
         newItems.push({
           id: nanoid(),
           type: 'song',
@@ -164,6 +187,7 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           preview_url: track.previewUrl,
           apple_music_url: track.trackViewUrl,
         })
+        existingKeys.add(key)
         accumulated += dur
       }
 
@@ -172,7 +196,7 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         return
       }
 
-      update({ ...setlist, items: newItems })
+      update({ ...setlist, items: [...setlist.items, ...newItems] })
       toast.success(t('editor.autoGenerateSuccess', { count: newItems.length }))
     } catch {
       toast.error(t('editor.autoGenerateNotFound'))
