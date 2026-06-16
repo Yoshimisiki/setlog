@@ -7,56 +7,33 @@ export async function GET(req: NextRequest) {
   const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]
   if (!videoId) return NextResponse.json({ error: 'invalid url' }, { status: 400 })
 
-  let fallbackTitle: string | null = null
-
-  // ① noembed.com
-  try {
-    const res = await fetch(
-      `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`,
-      { headers: { 'User-Agent': 'SETLOG/1.0' } }
-    )
-    if (res.ok) {
-      const data = await res.json()
-      fallbackTitle = data.title ?? null
-      if (data.duration) {
-        const m = data.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
-        if (m) {
-          const h = parseInt(m[1] ?? '0')
-          const min = parseInt(m[2] ?? '0')
-          const s = parseInt(m[3] ?? '0')
-          const duration_seconds = h * 3600 + min * 60 + s
-          if (duration_seconds > 0) {
-            return NextResponse.json({ title: fallbackTitle, duration_seconds })
-          }
+  // ① YouTube Data API v3（APIキーがある場合）
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (apiKey) {
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails,snippet&key=${apiKey}`
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const item = data.items?.[0]
+        if (item) {
+          const iso = item.contentDetails.duration // "PT4M33S"
+          const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+          const duration_seconds =
+            (parseInt(m?.[1] ?? '0') * 3600) +
+            (parseInt(m?.[2] ?? '0') * 60) +
+            (parseInt(m?.[3] ?? '0'))
+          return NextResponse.json({
+            title: item.snippet.title,
+            duration_seconds: duration_seconds > 0 ? duration_seconds : null,
+          })
         }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // ② youtube.com/watch ページスクレイピング
-  try {
-    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SETLOG/1.0)',
-        'Accept-Language': 'ja-JP',
-      },
-    })
-    if (pageRes.ok) {
-      const html = await pageRes.text()
-      const durationMatch = html.match(/"lengthSeconds":"(\d+)"/)
-      const titleMatch = html.match(/"title":"([^"]+)"/)
-      if (durationMatch) {
-        const duration_seconds = parseInt(durationMatch[1])
-        const title = titleMatch ? titleMatch[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/') : fallbackTitle
-        return NextResponse.json({ title, duration_seconds })
-      }
-      if (titleMatch && !fallbackTitle) {
-        fallbackTitle = titleMatch[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/')
-      }
-    }
-  } catch {}
-
-  // ③ フォールバック: oEmbed でタイトルのみ
+  // ② フォールバック: oEmbed（タイトルのみ）
   try {
     const res = await fetch(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
@@ -64,9 +41,9 @@ export async function GET(req: NextRequest) {
     )
     if (res.ok) {
       const data = await res.json()
-      return NextResponse.json({ title: data.title ?? fallbackTitle, duration_seconds: null })
+      return NextResponse.json({ title: data.title ?? '', duration_seconds: null })
     }
   } catch {}
 
-  return NextResponse.json({ title: fallbackTitle, duration_seconds: null })
+  return NextResponse.json({ title: null, duration_seconds: null })
 }
