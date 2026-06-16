@@ -16,10 +16,12 @@ import { Label } from '@/components/ui/label'
 import { formatSeconds, getTimingStatus, cn } from '@/lib/utils'
 import { saveCurrentSetlist, loadCurrentSetlist, defaultSetlist } from '@/lib/storage'
 import { toast } from 'sonner'
-import { Plus, Mic2, Radio, Link2, ListMusic, FilePlus, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Mic2, Radio, Link2, ListMusic, FilePlus, ChevronUp, ChevronDown, Wand2, ExternalLink, Copy, Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { nanoid } from 'nanoid'
 import type { Setlist, SetlistItem, ItemType } from '@/types'
+import type { ITunesTrack } from '@/lib/itunes'
 import SortableItem from './SortableItem'
 import AddItemModal from './AddItemModal'
 import ShareModal from './ShareModal'
@@ -27,17 +29,30 @@ import AppFooter from './AppFooter'
 
 const INFINITE = 999999 * 60
 
-interface Props {
-  initialSetlist?: Setlist
+function bandNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
-export default function SetlistEditor({ initialSetlist }: Props) {
+interface Props {
+  initialSetlist?: Setlist
+  initialBandName?: string
+}
+
+export default function SetlistEditor({ initialSetlist, initialBandName }: Props) {
   const t = useTranslations()
   const [setlist, setSetlist] = useState<Setlist>(initialSetlist ?? defaultSetlist())
+  const [isGenerating, setIsGenerating] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [addType, setAddType] = useState<ItemType>('song')
   const [editItem, setEditItem] = useState<SetlistItem | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [slugModalOpen, setSlugModalOpen] = useState(false)
+  const [slugCopied, setSlugCopied] = useState(false)
   const [playingId, setPlayingId] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const initialized = useRef(false)
@@ -45,11 +60,16 @@ export default function SetlistEditor({ initialSetlist }: Props) {
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
-    if (!initialSetlist) {
+    if (initialBandName) {
+      // バンド固定ページ: localStorageを使わず初期バンド名をセット
+      const fresh = defaultSetlist()
+      fresh.band_name = initialBandName
+      setSetlist(fresh)
+    } else if (!initialSetlist) {
       const loaded = loadCurrentSetlist()
       setSetlist(loaded)
     }
-  }, [initialSetlist])
+  }, [initialSetlist, initialBandName])
 
   const update = useCallback((next: Setlist) => {
     setSetlist(next)
@@ -84,6 +104,77 @@ export default function SetlistEditor({ initialSetlist }: Props) {
 
   const handleDeleteItem = (id: string) => {
     update({ ...setlist, items: setlist.items.filter((i) => i.id !== id) })
+  }
+
+  const autoGenerate = async () => {
+    if (setlist.items.length > 0 && !window.confirm(t('editor.autoGenerateConfirm'))) return
+
+    setIsGenerating(true)
+    try {
+      const searchRes = await fetch(`/api/itunes/search?q=${encodeURIComponent(setlist.band_name)}`)
+      if (!searchRes.ok) throw new Error('search failed')
+      const searchData = await searchRes.json()
+      const searchTracks = (searchData.results ?? []) as ITunesTrack[]
+
+      const bandLower = setlist.band_name.toLowerCase()
+      const matched =
+        searchTracks.find((t) => t.artistName.toLowerCase() === bandLower) ??
+        searchTracks.find((t) => t.artistName.toLowerCase().includes(bandLower)) ??
+        searchTracks[0]
+
+      if (!matched?.artistId) {
+        toast.error(t('editor.autoGenerateNotFound'))
+        return
+      }
+
+      const lookupRes = await fetch(`/api/itunes/lookup?id=${matched.artistId}`)
+      if (!lookupRes.ok) throw new Error('lookup failed')
+      const lookupData = await lookupRes.json()
+      const allTracks = (lookupData.results ?? []) as ITunesTrack[]
+
+      if (allTracks.length === 0) {
+        toast.error(t('editor.autoGenerateNotFound'))
+        return
+      }
+
+      // Fisher-Yates shuffle
+      const shuffled = [...allTracks]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+
+      const isInfinite = setlist.target_seconds >= INFINITE
+      let accumulated = 0
+      const newItems: SetlistItem[] = []
+
+      for (const track of shuffled) {
+        const dur = Math.round((track.trackTimeMillis ?? 0) / 1000)
+        if (!isInfinite && accumulated + dur > setlist.target_seconds) break
+        newItems.push({
+          id: nanoid(),
+          type: 'song',
+          title: track.trackName,
+          artist: track.artistName,
+          duration_seconds: dur,
+          preview_url: track.previewUrl,
+          apple_music_url: track.trackViewUrl,
+        })
+        accumulated += dur
+      }
+
+      if (newItems.length === 0) {
+        toast.error(t('editor.autoGenerateNotFound'))
+        return
+      }
+
+      update({ ...setlist, items: newItems })
+      toast.success(t('editor.autoGenerateSuccess', { count: newItems.length }))
+    } catch {
+      toast.error(t('editor.autoGenerateNotFound'))
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const openAdd = (type: ItemType) => {
@@ -168,6 +259,16 @@ export default function SetlistEditor({ initialSetlist }: Props) {
             <FilePlus className="w-3.5 h-3.5" />
             {t('editor.newSetlist')}
           </Button>
+          {setlist.band_name.trim() && bandNameToSlug(setlist.band_name) && (
+            <Button
+              variant="ghost" size="sm"
+              className="text-muted-foreground hover:text-foreground text-xs gap-1"
+              onClick={() => { setSlugCopied(false); setSlugModalOpen(true) }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              専用URL
+            </Button>
+          )}
           <Button
             size="sm"
             className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -251,6 +352,16 @@ export default function SetlistEditor({ initialSetlist }: Props) {
             </div>
           </div>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full border-dashed text-muted-foreground hover:text-foreground hover:bg-secondary"
+          onClick={autoGenerate}
+          disabled={isGenerating || !setlist.band_name.trim() || setlist.target_seconds <= 0}
+        >
+          <Wand2 className="w-4 h-4 mr-1.5" />
+          {isGenerating ? t('editor.autoGenerating') : t('editor.autoGenerate')}
+        </Button>
       </div>
 
       {/* Progress */}
@@ -327,6 +438,47 @@ export default function SetlistEditor({ initialSetlist }: Props) {
           </Button>
         </div>
       </div>
+
+      {/* 専用URLモーダル */}
+      {slugModalOpen && (() => {
+        const slug = bandNameToSlug(setlist.band_name)
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://setlog.yowofuru.com'
+        const bandUrl = `${origin}/b/${slug}`
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSlugModalOpen(false)}>
+            <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-foreground">このバンド専用URL</h3>
+                <p className="text-xs text-muted-foreground">
+                  このURLを共有すると、バンド名が初期値としてセットされた状態でエディタが開きます。
+                </p>
+              </div>
+              <div className="bg-secondary rounded-lg px-3 py-2 font-mono text-xs text-foreground break-all">
+                {bandUrl}
+              </div>
+              {!slug && (
+                <p className="text-xs text-yellow-400">
+                  ※ バンド名にアルファベット・数字が含まれていないためURLを生成できません。ローマ字でバンド名を入力してください。
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(bandUrl)
+                    setSlugCopied(true)
+                    setTimeout(() => setSlugCopied(false), 2000)
+                  }}
+                >
+                  {slugCopied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                  {slugCopied ? 'コピーしました' : 'URLをコピー'}
+                </Button>
+                <Button variant="outline" onClick={() => setSlugModalOpen(false)}>閉じる</Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <AddItemModal
         open={addModalOpen}
