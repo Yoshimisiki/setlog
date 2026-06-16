@@ -3,8 +3,9 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
-import { GripVertical, Pencil, Trash2, Music, Mic2, Radio, Play, Pause } from 'lucide-react'
+import { GripVertical, Pencil, Trash2, Music, Mic2, Radio, Play, Pause, Pin } from 'lucide-react'
 import { formatSeconds, cn } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 import type { SetlistItem } from '@/types'
 
 const typeConfig = {
@@ -18,11 +19,13 @@ interface Props {
   index: number
   onEdit: (item: SetlistItem) => void
   onDelete: (id: string) => void
+  onPinGenerated?: (id: string) => void
   playingId?: string | null
   onPlay?: (item: SetlistItem) => void
 }
 
-export default function SortableItem({ item, index, onEdit, onDelete, playingId, onPlay }: Props) {
+export default function SortableItem({ item, index, onEdit, onDelete, onPinGenerated, playingId, onPlay }: Props) {
+  const t = useTranslations('editor')
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
 
@@ -36,6 +39,7 @@ export default function SortableItem({ item, index, onEdit, onDelete, playingId,
   const cfg = typeConfig[item.type] ?? typeConfig.song
   const Icon = cfg.icon
   const isPlaying = playingId === item.id
+  const isGenerated = item.type === 'song' && item.generated === true
 
   return (
     <div
@@ -61,14 +65,28 @@ export default function SortableItem({ item, index, onEdit, onDelete, playingId,
       <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.color)} />
 
       <div className="flex-1 min-w-0">
-        <span className="text-foreground text-sm truncate block">{item.title || '(無題)'}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-foreground text-sm truncate">{item.title || '(無題)'}</span>
+          {/* エディタ専用ラベル */}
+          {item.type === 'mc' && (
+            <span className="rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-foreground shrink-0">MC</span>
+          )}
+          {item.type === 'se' && (
+            <span className="rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-foreground shrink-0">SE</span>
+          )}
+          {item.type === 'song' && isGenerated && (
+            <span className="rounded-full border border-primary/50 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary shrink-0">{t('itemLabelGenerated')}</span>
+          )}
+          {item.type === 'song' && !isGenerated && (
+            <span className="rounded-full border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-muted-foreground shrink-0">{t('itemLabelFixed')}</span>
+          )}
+        </div>
         {item.artist && (
           <span className="text-xs text-muted-foreground truncate block">{item.artist}</span>
         )}
         {item.note && (
           <span className="text-xs text-muted-foreground/60 truncate block">{item.note}</span>
         )}
-        {/* Deezer link badge */}
         {item.deezer_id && (
           <div className="flex items-center gap-1.5 mt-0.5">
             <a
@@ -108,6 +126,17 @@ export default function SortableItem({ item, index, onEdit, onDelete, playingId,
       </span>
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        {/* 固定するボタン（自動生成曲のみ） */}
+        {isGenerated && onPinGenerated && (
+          <Button
+            variant="ghost" size="icon"
+            className="h-7 w-7 text-primary/60 hover:text-primary"
+            title={t('pinGeneratedSong')}
+            onClick={() => onPinGenerated(item.id)}
+          >
+            <Pin className="w-3 h-3" />
+          </Button>
+        )}
         <Button
           variant="ghost" size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
