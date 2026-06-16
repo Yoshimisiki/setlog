@@ -64,10 +64,11 @@ export default function SortableItem({ item, index, onEdit, onDelete, onPinGener
 
       <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.color)} />
 
+      {/* タイトル + badge + アーティスト */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-foreground text-sm truncate">{item.title || '(無題)'}</span>
-          {/* エディタ専用ラベル */}
+        <div className="text-foreground text-sm truncate">{item.title || '(無題)'}</div>
+        {/* badge 行（タイトル下に分離してスマホでも潰れない） */}
+        <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
           {item.type === 'mc' && (
             <span className="rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-foreground shrink-0">MC</span>
           )}
@@ -80,10 +81,10 @@ export default function SortableItem({ item, index, onEdit, onDelete, onPinGener
           {item.type === 'song' && !isGenerated && (
             <span className="rounded-full border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-muted-foreground shrink-0">{t('itemLabelFixed')}</span>
           )}
+          {item.artist && (
+            <span className="text-xs text-muted-foreground truncate">{item.artist}</span>
+          )}
         </div>
-        {item.artist && (
-          <span className="text-xs text-muted-foreground truncate block">{item.artist}</span>
-        )}
         {item.note && (
           <span className="text-xs text-muted-foreground/60 truncate block">{item.note}</span>
         )}
@@ -111,7 +112,7 @@ export default function SortableItem({ item, index, onEdit, onDelete, onPinGener
             'w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0',
             isPlaying
               ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100'
+              : 'bg-secondary text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100'
           )}
           title="30秒プレビュー"
         >
@@ -125,16 +126,18 @@ export default function SortableItem({ item, index, onEdit, onDelete, onPinGener
         {formatSeconds(item.duration_seconds)}
       </span>
 
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        {/* 固定するボタン（自動生成曲のみ） */}
+      {/* アクションボタン: スマホ常時表示 / sm以上 hover表示 */}
+      <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
         {isGenerated && onPinGenerated && (
           <Button
-            variant="ghost" size="icon"
-            className="h-7 w-7 text-primary/60 hover:text-primary"
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 sm:w-7 sm:px-0"
             title={t('pinGeneratedSong')}
             onClick={() => onPinGenerated(item.id)}
           >
-            <Pin className="w-3 h-3" />
+            <Pin className="w-3 h-3 sm:mr-0 mr-1" />
+            <span className="sm:hidden">{t('pinGeneratedSong')}</span>
           </Button>
         )}
         <Button
