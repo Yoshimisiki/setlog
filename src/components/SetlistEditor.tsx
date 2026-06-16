@@ -30,12 +30,15 @@ import AppFooter from './AppFooter'
 const INFINITE = 999999 * 60
 
 function bandNameToSlug(name: string): string {
-  return name
+  const trimmed = name.trim()
+  if (!trimmed) return ''
+  const ascii = trimmed
     .toLowerCase()
     .replace(/[\s_]+/g, '-')
     .replace(/[^a-z0-9\-]/g, '')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
+  return ascii || encodeURIComponent(trimmed)
 }
 
 interface Props {
@@ -457,9 +460,9 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
               <div className="bg-secondary rounded-lg px-3 py-2 font-mono text-xs text-foreground break-all">
                 {bandUrl}
               </div>
-              {!slug && (
+              {slug && slug !== slug.replace(/%/g, '') && (
                 <p className="text-xs text-yellow-400">
-                  ※ バンド名にアルファベット・数字が含まれていないためURLを生成できません。ローマ字でバンド名を入力してください。
+                  ※ 日本語名はURLエンコードされます。ローマ字表記のバンド名にするとよりシンプルなURLになります。
                 </p>
               )}
               <div className="flex gap-2">

@@ -495,50 +495,64 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
                       }}
                       onPointerDown={e => {
                         e.preventDefault()
+                        const target = e.currentTarget
+                        target.setPointerCapture(e.pointerId)
                         const startPX = e.clientX; const startPY = e.clientY
                         const startLX = logoX;      const startLY = logoY
                         const cs = sc()
                         const onMove = (ev: PointerEvent) => {
+                          ev.preventDefault()
                           setLogoX(Math.max(0, startLX + (ev.clientX - startPX) / cs))
                           setLogoY(Math.max(0, startLY + (ev.clientY - startPY) / cs))
                         }
-                        const onUp = () => {
-                          window.removeEventListener('pointermove', onMove)
-                          window.removeEventListener('pointerup', onUp)
+                        const onUp = (ev: PointerEvent) => {
+                          try { target.releasePointerCapture(ev.pointerId) } catch {}
+                          target.removeEventListener('pointermove', onMove)
+                          target.removeEventListener('pointerup', onUp)
+                          target.removeEventListener('pointercancel', onUp)
                           saveAll()
                         }
-                        window.addEventListener('pointermove', onMove)
-                        window.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointermove', onMove)
+                        target.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointercancel', onUp)
                       }}
                     >
                       <span style={{ fontSize: 10, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '1px 4px', borderRadius: 2, pointerEvents: 'none' }}>ロゴ</span>
 
-                      {/* リサイズハンドル（子要素として右下に配置） */}
+                      {/* リサイズハンドル（子要素として右下に配置・setPointerCapture方式） */}
                       <div
                         style={{
                           position: 'absolute',
-                          right: -8, bottom: -8,
-                          width: 16, height: 16,
-                          background: 'white', borderRadius: '50%',
-                          cursor: 'nwse-resize', touchAction: 'none',
+                          right: -10, bottom: -10,
+                          width: 22, height: 22,
+                          background: 'white', border: '2px solid #000', borderRadius: '50%',
+                          cursor: 'nwse-resize', touchAction: 'none', zIndex: 30,
                         }}
                         onPointerDown={e => {
                           e.preventDefault()
                           e.stopPropagation()
-                          const startX    = e.clientX
+                          const target = e.currentTarget
+                          target.setPointerCapture(e.pointerId)
+                          const startX = e.clientX; const startY = e.clientY
                           const startSize = logoSize
                           const cs = sc()
                           const onMove = (ev: PointerEvent) => {
-                            const delta = ev.clientX - startX
+                            ev.preventDefault()
+                            const dx = ev.clientX - startX
+                            const dy = ev.clientY - startY
+                            const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy
                             setLogoSize(Math.max(20, Math.min(800, startSize + delta / cs)))
                           }
-                          const onUp = () => {
-                            window.removeEventListener('pointermove', onMove)
-                            window.removeEventListener('pointerup', onUp)
+                          const onUp = (ev: PointerEvent) => {
+                            try { target.releasePointerCapture(ev.pointerId) } catch {}
+                            target.removeEventListener('pointermove', onMove)
+                            target.removeEventListener('pointerup', onUp)
+                            target.removeEventListener('pointercancel', onUp)
                             saveAll()
                           }
-                          window.addEventListener('pointermove', onMove)
-                          window.addEventListener('pointerup', onUp)
+                          target.addEventListener('pointermove', onMove)
+                          target.addEventListener('pointerup', onUp)
+                          target.addEventListener('pointercancel', onUp)
                         }}
                       />
                     </div>
@@ -553,20 +567,26 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
                       style={{ position: 'absolute', left: qrX * s, top: qrY * s, width: qSize * s, height: qSize * s, border: '1px dashed rgba(255,255,255,0.5)', cursor: 'move', touchAction: 'none' }}
                       onPointerDown={e => {
                         e.preventDefault()
+                        const target = e.currentTarget
+                        target.setPointerCapture(e.pointerId)
                         const startPX = e.clientX; const startPY = e.clientY
                         const startQX = qrX;       const startQY = qrY
                         const cs = sc()
                         const onMove = (ev: PointerEvent) => {
+                          ev.preventDefault()
                           setQrX(Math.max(0, Math.min(CS - qSize, startQX + (ev.clientX - startPX) / cs)))
                           setQrY(Math.max(0, Math.min(CS - qSize, startQY + (ev.clientY - startPY) / cs)))
                         }
-                        const onUp = () => {
-                          window.removeEventListener('pointermove', onMove)
-                          window.removeEventListener('pointerup', onUp)
+                        const onUp = (ev: PointerEvent) => {
+                          try { target.releasePointerCapture(ev.pointerId) } catch {}
+                          target.removeEventListener('pointermove', onMove)
+                          target.removeEventListener('pointerup', onUp)
+                          target.removeEventListener('pointercancel', onUp)
                           saveAll()
                         }
-                        window.addEventListener('pointermove', onMove)
-                        window.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointermove', onMove)
+                        target.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointercancel', onUp)
                       }}
                     >
                       <span style={{ fontSize: 10, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '1px 4px', borderRadius: 2, pointerEvents: 'none' }}>QR</span>
@@ -582,20 +602,26 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
                       style={{ position: 'absolute', left: textX * s, top: (textY - 20) * s, border: '1px dashed rgba(255,255,255,0.5)', cursor: 'move', touchAction: 'none', padding: '2px 6px' }}
                       onPointerDown={e => {
                         e.preventDefault()
+                        const target = e.currentTarget
+                        target.setPointerCapture(e.pointerId)
                         const startPX = e.clientX; const startPY = e.clientY
                         const startTX = textX;     const startTY = textY
                         const cs = sc()
                         const onMove = (ev: PointerEvent) => {
+                          ev.preventDefault()
                           setTextX(Math.max(0, startTX + (ev.clientX - startPX) / cs))
                           setTextY(Math.max(20, startTY + (ev.clientY - startPY) / cs))
                         }
-                        const onUp = () => {
-                          window.removeEventListener('pointermove', onMove)
-                          window.removeEventListener('pointerup', onUp)
+                        const onUp = (ev: PointerEvent) => {
+                          try { target.releasePointerCapture(ev.pointerId) } catch {}
+                          target.removeEventListener('pointermove', onMove)
+                          target.removeEventListener('pointerup', onUp)
+                          target.removeEventListener('pointercancel', onUp)
                           saveAll()
                         }
-                        window.addEventListener('pointermove', onMove)
-                        window.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointermove', onMove)
+                        target.addEventListener('pointerup', onUp)
+                        target.addEventListener('pointercancel', onUp)
                       }}
                     >
                       <span style={{ fontSize: 10, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '1px 4px', borderRadius: 2, pointerEvents: 'none' }}>テキスト</span>
