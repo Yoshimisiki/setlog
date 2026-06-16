@@ -165,8 +165,8 @@ export default function SetlistView({ setlist }: Props) {
                         className="text-red-400 hover:opacity-70 transition-opacity flex-shrink-0">
                         <SiYoutubemusic className="w-5 h-5" />
                       </a>
-                      {item.youtube_url && (
-                        <a href={item.youtube_url} target="_blank" rel="noopener noreferrer"
+                      {item.youtube_id && (
+                        <a href={`https://www.youtube.com/watch?v=${item.youtube_id}`} target="_blank" rel="noopener noreferrer"
                           title="YouTube で見る"
                           className="text-red-500 hover:opacity-70 transition-opacity flex-shrink-0">
                           <SiYoutube className="w-5 h-5" />

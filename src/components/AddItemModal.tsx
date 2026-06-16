@@ -77,7 +77,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
   const [deezerId, setDeezerId]         = useState('')
   const [previewUrl, setPreviewUrl]     = useState('')
   const [appleMusicUrl, setAppleMusicUrl] = useState('')
-  const [youtubeUrl, setYoutubeUrl]     = useState('')
+  const [youtubeUrl, setYoutubeUrl]     = useState('') // 表示用フルURL、保存時にIDのみ抽出
 
   // 検索状態
   const [searchInput, setSearchInput]         = useState('')
@@ -144,7 +144,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       setDeezerId(editItem.deezer_id ?? '')
       setPreviewUrl(editItem.preview_url ?? '')
       setAppleMusicUrl(editItem.apple_music_url ?? '')
-      setYoutubeUrl(editItem.youtube_url ?? '')
+      setYoutubeUrl(editItem.youtube_id ? `https://www.youtube.com/watch?v=${editItem.youtube_id}` : '')
       if (editItem.deezer_id) {
         setSelectedTrack({
           source: 'deezer',
@@ -369,7 +369,7 @@ export default function AddItemModal({ open, onClose, itemType, editItem, onSave
       deezer_id: deezerId || undefined,
       preview_url: previewUrl || undefined,
       apple_music_url: appleMusicUrl || undefined,
-      youtube_url: youtubeUrl.trim() || undefined,
+      youtube_id: extractVideoId(youtubeUrl.trim()) || undefined,
     })
     onClose()
   }
