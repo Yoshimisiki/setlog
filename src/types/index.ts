@@ -11,6 +11,7 @@ export interface SetlistItem {
   apple_music_url?: string
   youtube_id?: string
   note?: string
+  generated?: boolean
 }
 
 export interface Setlist {

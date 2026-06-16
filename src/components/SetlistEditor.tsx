@@ -124,16 +124,20 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
   }
 
   const autoGenerate = async () => {
-    if (setlist.items.length > 0 && !window.confirm(t('editor.autoGenerateConfirm'))) return
+    // fixedItems: ユーザーが手動で入れた項目（generated が false/undefined）
+    // generatedItems: 前回自動生成した曲（今回は入れ替える）
+    const fixedItems = setlist.items.filter(item => !item.generated)
 
-    // duration_seconds === 0 の項目があると残り時間が計算できない
-    if (setlist.items.some(item => item.duration_seconds === 0)) {
+    if (fixedItems.length > 0 && !window.confirm(t('editor.autoGenerateConfirm'))) return
+
+    // 固定項目に duration_seconds === 0 があると残り時間が計算できない
+    if (fixedItems.some(item => item.duration_seconds === 0)) {
       toast.error(t('editor.autoGenerateInfiniteExisting'))
       return
     }
 
     const isInfinite = setlist.target_seconds >= INFINITE
-    const existingSeconds = setlist.items.reduce((sum, item) => sum + item.duration_seconds, 0)
+    const existingSeconds = fixedItems.reduce((sum, item) => sum + item.duration_seconds, 0)
     const remainingSeconds = isInfinite ? INFINITE : Math.max(0, setlist.target_seconds - existingSeconds)
 
     if (!isInfinite && remainingSeconds <= 0) {
@@ -170,9 +174,9 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         return
       }
 
-      // 既存曲との重複を避けるキーセット（正規化済み曲名で比較）
+      // 固定項目の song だけを重複判定の基準にする
       const existingTitleKeys = new Set(
-        setlist.items
+        fixedItems
           .filter(item => item.type === 'song')
           .map(item => normalizeSongTitle(item.title))
           .filter(Boolean)
@@ -203,6 +207,7 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           duration_seconds: dur,
           preview_url: track.previewUrl,
           apple_music_url: track.trackViewUrl,
+          generated: true,
         })
         existingTitleKeys.add(normalizedTitle)
         accumulated += dur
@@ -213,7 +218,8 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         return
       }
 
-      update({ ...setlist, items: [...setlist.items, ...newItems] })
+      // fixedItems だけ残して、前回の自動生成曲と入れ替える
+      update({ ...setlist, items: [...fixedItems, ...newItems] })
       toast.success(t('editor.autoGenerateSuccess', { count: newItems.length }))
     } catch {
       toast.error(t('editor.autoGenerateNotFound'))
