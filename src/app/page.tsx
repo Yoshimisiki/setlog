@@ -16,7 +16,7 @@ export default function LandingPage() {
         </Button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center px-4 py-20">
+      <main className="flex-1 flex flex-col items-center px-4 pt-20 pb-0">
         {/* Hero */}
         <div className="max-w-2xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1 text-sm font-medium border border-primary/20">
@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
 
         {/* Features */}
-        <div id="features" className="mt-24 max-w-3xl mx-auto w-full space-y-8">
+        <div id="features" className="mt-12 max-w-3xl mx-auto w-full space-y-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-center tracking-tight">
             持ち曲から、思いがけないセトリを作る。
           </h2>
