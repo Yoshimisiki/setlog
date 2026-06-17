@@ -95,23 +95,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Bottom CTA */}
-        <div className="mt-24 max-w-xl mx-auto w-full text-center space-y-5 bg-card border border-border rounded-2xl p-10">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            次のセトリを、ガチャってみる。
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-            持ち時間を入れて、自動生成。<br />
-            気に入った曲を固定して、終演後はそのまま画像で投稿できます。
-          </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-10"
-          >
-            <Link href="/editor">作成する →</Link>
-          </Button>
-        </div>
       </main>
 
       <AppFooter />
