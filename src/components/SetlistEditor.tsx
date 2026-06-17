@@ -27,6 +27,8 @@ import AddItemModal from './AddItemModal'
 import ShareModal from './ShareModal'
 import AppFooter from './AppFooter'
 import AddToHomeScreenHint from './AddToHomeScreenHint'
+import EditorGuideContent from './EditorGuideContent'
+import EditorAdSlot from './EditorAdSlot'
 
 const INFINITE = 999999 * 60
 
@@ -372,6 +374,11 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         </div>
       </div>
 
+      {/* 短い説明文（AdSense審査対策・コンテンツ補完） */}
+      <p className="text-xs text-muted-foreground bg-card border border-border rounded-xl px-4 py-3 leading-relaxed">
+        SETLOGは、バンド名と持ち時間からセトリを作成できるツールです。曲・MC・SEを並べて、残り時間に合う曲を自動生成できます。
+      </p>
+
       <AddToHomeScreenHint />
 
       {/* Metadata */}
@@ -620,6 +627,9 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
         onClose={() => setShareOpen(false)}
         setlist={setlist}
       />
+
+      <EditorGuideContent />
+      <EditorAdSlot />
       <AppFooter />
     </main>
   )
