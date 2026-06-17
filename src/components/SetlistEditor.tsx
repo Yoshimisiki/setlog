@@ -26,6 +26,7 @@ import SortableItem from './SortableItem'
 import AddItemModal from './AddItemModal'
 import ShareModal from './ShareModal'
 import AppFooter from './AppFooter'
+import AddToHomeScreenHint from './AddToHomeScreenHint'
 
 const INFINITE = 999999 * 60
 
@@ -370,6 +371,8 @@ export default function SetlistEditor({ initialSetlist, initialBandName }: Props
           </Button>
         </div>
       </div>
+
+      <AddToHomeScreenHint />
 
       {/* Metadata */}
       <div className="bg-card border border-border rounded-xl p-4 space-y-3">

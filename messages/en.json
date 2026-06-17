@@ -50,7 +50,9 @@
     "pinGeneratedSongSuccess": "Pinned this song",
     "clearGeneratedSongs": "Clear auto-generated songs",
     "clearGeneratedSongsConfirm": "Clear only auto-generated songs? MC / SE / fixed tracks will remain.",
-    "clearGeneratedSongsSuccess": "Cleared auto-generated songs"
+    "clearGeneratedSongsSuccess": "Cleared auto-generated songs",
+    "addToHomeScreenHint": "Add SETLOG to your Home Screen from the iPhone share button to use it like an app.",
+    "close": "Close"
   },
   "addItem": {
     "addSong": "Add Song",

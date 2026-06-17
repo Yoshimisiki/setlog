@@ -18,6 +18,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SETLOG — Setlist maker for live musicians",
   description: "Create your live setlist with time management and share a URL fans can use to listen on streaming services.",
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icons/setlog-icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/setlog-icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/setlog-icon-180.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'SETLOG',
+    statusBarStyle: 'black-translucent',
+  },
   openGraph: {
     title: "SETLOG",
     description: "Setlist maker for live musicians",
