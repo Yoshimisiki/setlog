@@ -30,7 +30,6 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            持ち曲から、思いがけないセトリを作る。<br />
             バンド名と持ち時間を入れるだけ。曲・MC・SEを並べて、残り時間に合う曲をSETLOGが自動生成します。<br />
             <span className="text-sm">終演後のセトリ画像も、アー写・フライヤー・ロゴ・フォントを選んでそのまま作れます。</span>
           </p>
