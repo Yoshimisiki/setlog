@@ -9,8 +9,14 @@ const DISMISSED_KEY = 'setlog:add-to-home-screen-hint-dismissed'
 function isIosSafari(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
-  const isIos = /iPhone|iPad|iPod/.test(ua)
+
+  // iPadOS 13+ は userAgent が Mac になるため platform + maxTouchPoints で判定
+  const isIpadOS =
+    navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+
+  const isIos = /iPhone|iPad|iPod/.test(ua) || isIpadOS
   if (!isIos) return false
+
   // iOS Chrome / Firefox / Edge / Opera は除外
   if (/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua)) return false
   return true
@@ -29,8 +35,18 @@ export default function AddToHomeScreenHint() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (!isIosSafari()) return
+    const force =
+      new URLSearchParams(window.location.search).get('showA2HS') === '1'
+
+    // standalone 起動中は常に非表示
     if (isStandalone()) return
+
+    if (force) {
+      setVisible(true)
+      return
+    }
+
+    if (!isIosSafari()) return
     if (localStorage.getItem(DISMISSED_KEY) === '1') return
     setVisible(true)
   }, [])
