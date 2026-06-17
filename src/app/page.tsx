@@ -25,13 +25,13 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
-            持ち曲から、<br />
-            <span className="text-primary">思いがけないセトリ</span>を作る。
+            セトリ作りを、<br />
+            <span className="text-primary">もっと楽しく。</span>
           </h1>
 
           <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            バンド名と持ち時間を入れるだけ。<br />
-            曲・MC・SEを並べて、残り時間に合う曲をSETLOGが自動生成します。<br />
+            持ち曲から、思いがけないセトリを作る。<br />
+            バンド名と持ち時間を入れるだけ。曲・MC・SEを並べて、残り時間に合う曲をSETLOGが自動生成します。<br />
             <span className="text-sm">終演後のセトリ画像も、アー写・フライヤー・ロゴ・フォントを選んでそのまま作れます。</span>
           </p>
 
@@ -47,7 +47,7 @@ export default function LandingPage() {
         {/* Features */}
         <div id="features" className="mt-24 max-w-3xl mx-auto w-full space-y-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-center tracking-tight">
-            セトリ作りを、もっと楽しく。
+            持ち曲から、思いがけないセトリを作る。
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
