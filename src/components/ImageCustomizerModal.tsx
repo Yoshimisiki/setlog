@@ -421,8 +421,8 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
               <button
                 onClick={() => setShowDuration(d => !d)}
                 className={cn(
-                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                  showDuration ? 'bg-primary' : 'bg-secondary'
+                  'relative inline-flex h-6 w-11 items-center rounded-full border transition-colors',
+                  showDuration ? 'bg-green-600 border-green-500' : 'bg-secondary border-border'
                 )}
               >
                 <span className={cn(
