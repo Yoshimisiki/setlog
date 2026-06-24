@@ -58,6 +58,7 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
   // テキスト
   const [textColor, setTextColor] = useState('#ffffff')
   const [font,      setFont]      = useState('Geist')
+  const [showDuration, setShowDuration] = useState(true)
 
   // ロゴ
   const [logo,     setLogo]     = useState<string | null>(null)
@@ -104,6 +105,7 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
       if (s.bgColor)           setBgColor(s.bgColor)
       if (s.textColor)         setTextColor(s.textColor)
       if (s.font)              setFont(s.font)
+      if (s.showDuration != null) setShowDuration(s.showDuration)
       if (s.bgScale    != null) setBgScale(s.bgScale)
       if (s.bgOffsetX  != null) setBgOffsetX(s.bgOffsetX)
       if (s.bgOffsetY  != null) setBgOffsetY(s.bgOffsetY)
@@ -206,7 +208,7 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
       ctx.fillText(`${i + 1}.`, tx, y)
       ctx.fillStyle = item.type === 'song' ? tc : hexToRgba(tc, 0.45)
       ctx.fillText(item.title.length > 28 ? item.title.slice(0, 26) + '…' : item.title, tx + 42, y)
-      if (item.duration_seconds > 0) {
+      if (showDuration && item.duration_seconds > 0) {
         ctx.fillStyle = hexToRgba(tc, 0.3)
         ctx.textAlign = 'right'
         ctx.fillText(formatSeconds(item.duration_seconds), tx + 760, y)
@@ -258,7 +260,7 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
     setPreviewSrc(canvas.toDataURL('image/jpeg', 0.8))
     setRendering(false)
   }, [bgColor, bgImage, bgImageW, bgImageH, bgScale, bgOffsetX, bgOffsetY,
-      textColor, font, textX, textY, logo, logoNW, logoNH, logoX, logoY, logoSize,
+      textColor, font, showDuration, textX, textY, logo, logoNW, logoNH, logoX, logoY, logoSize,
       qrX, qrY, setlist, displayUrl])
 
   useEffect(() => {
@@ -276,7 +278,7 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
   })
 
   const saveAll = () => {
-    localStorage.setItem('image:settings', JSON.stringify({ bgColor, textColor, font, bgScale, bgOffsetX, bgOffsetY }))
+    localStorage.setItem('image:settings', JSON.stringify({ bgColor, textColor, font, bgScale, bgOffsetX, bgOffsetY, showDuration }))
     localStorage.setItem('image:layout',   JSON.stringify({ logoX, logoY, logoSize, qrX, qrY, textX, textY }))
     if (bgImage) localStorage.setItem('image:bg',  bgImage)
     else         localStorage.removeItem('image:bg')
@@ -413,6 +415,21 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">曲の時間を表示</Label>
+              <button
+                onClick={() => setShowDuration(d => !d)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                  showDuration ? 'bg-primary' : 'bg-secondary'
+                )}
+              >
+                <span className={cn(
+                  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                  showDuration ? 'translate-x-6' : 'translate-x-1'
+                )} />
+              </button>
             </div>
             {SmallPreview}
           </>)}
