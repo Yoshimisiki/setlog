@@ -421,13 +421,13 @@ export default function ImageCustomizerModal({ open, onClose, setlist, displayUr
               <button
                 onClick={() => setShowDuration(d => !d)}
                 className={cn(
-                  'relative inline-flex h-6 w-11 items-center rounded-full border transition-colors',
-                  showDuration ? 'bg-green-600 border-green-500' : 'bg-secondary border-border'
+                  'relative inline-flex h-7 w-12 items-center rounded-full border-2 transition-colors',
+                  showDuration ? 'bg-green-600 border-green-500' : 'bg-zinc-700 border-zinc-600'
                 )}
               >
                 <span className={cn(
-                  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                  showDuration ? 'translate-x-6' : 'translate-x-1'
+                  'inline-block h-5 w-5 transform rounded-full shadow transition-transform',
+                  showDuration ? 'translate-x-5 bg-white' : 'translate-x-0.5 bg-zinc-400'
                 )} />
               </button>
             </div>
